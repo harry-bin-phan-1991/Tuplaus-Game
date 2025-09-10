@@ -116,7 +116,8 @@
 
       <div class="card widget-wrap">
         <tuplaus-widget id="tuplausWidget"
-          api-url="http://localhost:4000/graphql">
+          api-url="http://localhost:4000/graphql"
+          allow-origins="http://localhost:8080">
         </tuplaus-widget>
       </div>
     </div>
@@ -128,6 +129,7 @@
     // Defaults
     const DEFAULT_PLAYER = 'player-on-external-site';
     const DEFAULT_API = 'http://localhost:4000/graphql';
+    const DEFAULT_ALLOW = 'http://localhost:8080';
 
     // Elements
     let widget = document.getElementById('tuplausWidget');
@@ -136,7 +138,6 @@
     const applyBtn = document.getElementById('applyBtn');
     const resetBtn = document.getElementById('resetBtn');
 
-    // Helper: Pre-create player so the app doesn't hit a 404 first
     async function ensurePlayer(apiUrl, playerId) {
       try {
         const query = 'mutation CreatePlayer($id: String!) { createPlayer(id: $id) { id } }';
@@ -146,22 +147,20 @@
           body: JSON.stringify({ query, variables: { id: playerId } })
         });
       } catch (e) {
-        // Swallow errors; the widget will still handle its own flow
         console.warn('ensurePlayer failed:', e);
       }
     }
 
-    // Helper: recreate widget so new attributes take effect without touching the app code
     function recreateWidget(playerId, apiUrl) {
       const parent = widget.parentNode;
       const next = document.createElement('tuplaus-widget');
       next.setAttribute('player-id', playerId);
       next.setAttribute('api-url', apiUrl);
+      next.setAttribute('allow-origins', DEFAULT_ALLOW);
       parent.replaceChild(next, widget);
       widget = next;
     }
 
-    // Initialize from inputs (or defaults)
     (async function init() {
       const pid = (playerIdInput.value || DEFAULT_PLAYER).trim();
       const api = (apiUrlInput.value || DEFAULT_API).trim();
