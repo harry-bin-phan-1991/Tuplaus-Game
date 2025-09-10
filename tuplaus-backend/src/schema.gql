@@ -1,0 +1,32 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type GameRound {
+  didWin: Boolean!
+  drawnCard: Int!
+  newBalance: Float!
+  winnings: Float!
+}
+
+type Mutation {
+  cashOut(playerId: String!): Player!
+  createPlayer(id: String!): Player!
+  playRound(playRoundInput: PlayRoundInput!): GameRound!
+}
+
+input PlayRoundInput {
+  bet: Float!
+  choice: String!
+  playerId: String!
+}
+
+type Player {
+  activeWinnings: Float!
+  balance: Float!
+  id: String!
+}
+
+type Query {
+  player(id: String!): Player!
+}

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Tuplaus Widget Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <script src="http://localhost:4173/tuplaus-widget.umd.js"></script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --fg: #e2e8f0;
+      --muted: #94a3b8;
+      --card: #111827;
+      --accent: #38bdf8;
+      --border: #1f2937;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      background: radial-gradient(1200px 800px at 10% -10%, #0b1220 40%, #020617 100%);
+      color: var(--fg);
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 2rem;
+    }
+    .container {
+      width: 100%;
+      max-width: 1100px;
+      display: grid;
+      gap: 1.25rem;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .title {
+      font-size: 1.75rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .subtitle { color: var(--muted); margin-top: .25rem; }
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+      padding: 1.25rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1.3fr;
+      gap: 1.25rem;
+    }
+    .panel h3 { margin: 0 0 .5rem 0; font-size: 1rem; color: var(--muted); }
+    label { display: block; font-size: .85rem; color: var(--muted); margin-bottom: .35rem; }
+    input[type="text"] {
+      width: 100%;
+      background: #0b1220;
+      color: var(--fg);
+      padding: .6rem .75rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      outline: none;
+    }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+    .btns { display: flex; gap: .5rem; margin-top: .75rem; }
+    button {
+      background: var(--accent);
+      color: #001018;
+      font-weight: 600;
+      border: none;
+      padding: .6rem .9rem;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    button.secondary { background: #1f2937; color: var(--fg); }
+    .widget-wrap { padding: .5rem; }
+    .footer { text-align: center; color: var(--muted); font-size: .85rem; margin-top: .25rem; }
+    @media (max-width: 920px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <div class="title">Tuplaus Widget Playground</div>
+        <div class="subtitle">Embed the game as a Web Component and configure it with attributes.</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card panel">
+        <h3>Configuration</h3>
+        <div class="row">
+          <div>
+            <label for="playerId">player-id</label>
+            <input id="playerId" type="text" value="player-on-external-site" />
+          </div>
+          <div>
+            <label for="apiUrl">api-url</label>
+            <input id="apiUrl" type="text" value="http://localhost:4000/graphql" />
+          </div>
+        </div>
+        <div class="btns">
+          <button id="applyBtn">Apply</button>
+          <button class="secondary" id="resetBtn">Reset</button>
+        </div>
+      </div>
+
+      <div class="card widget-wrap">
+        <tuplaus-widget id="tuplausWidget"
+          api-url="http://localhost:4000/graphql">
+        </tuplaus-widget>
+      </div>
+    </div>
+
+    <div class="footer">Tip: Backend should run at the api-url. CORS must be enabled on the server.</div>
+  </div>
+
+  <script>
+    // Defaults
+    const DEFAULT_PLAYER = 'player-on-external-site';
+    const DEFAULT_API = 'http://localhost:4000/graphql';
+
+    // Elements
+    let widget = document.getElementById('tuplausWidget');
+    const playerIdInput = document.getElementById('playerId');
+    const apiUrlInput = document.getElementById('apiUrl');
+    const applyBtn = document.getElementById('applyBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    // Helper: Pre-create player so the app doesn't hit a 404 first
+    async function ensurePlayer(apiUrl, playerId) {
+      try {
+        const query = 'mutation CreatePlayer($id: String!) { createPlayer(id: $id) { id } }';
+        await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query, variables: { id: playerId } })
+        });
+      } catch (e) {
+        // Swallow errors; the widget will still handle its own flow
+        console.warn('ensurePlayer failed:', e);
+      }
+    }
+
+    // Helper: recreate widget so new attributes take effect without touching the app code
+    function recreateWidget(playerId, apiUrl) {
+      const parent = widget.parentNode;
+      const next = document.createElement('tuplaus-widget');
+      next.setAttribute('player-id', playerId);
+      next.setAttribute('api-url', apiUrl);
+      parent.replaceChild(next, widget);
+      widget = next;
+    }
+
+    // Initialize from inputs (or defaults)
+    (async function init() {
+      const pid = (playerIdInput.value || DEFAULT_PLAYER).trim();
+      const api = (apiUrlInput.value || DEFAULT_API).trim();
+      await ensurePlayer(api, pid);
+      recreateWidget(pid, api);
+    })();
+
+    applyBtn.addEventListener('click', async () => {
+      const pid = (playerIdInput.value.trim() || DEFAULT_PLAYER);
+      const api = (apiUrlInput.value.trim() || DEFAULT_API);
+      await ensurePlayer(api, pid);
+      recreateWidget(pid, api);
+    });
+
+    resetBtn.addEventListener('click', async () => {
+      playerIdInput.value = DEFAULT_PLAYER;
+      apiUrlInput.value = DEFAULT_API;
+      await ensurePlayer(DEFAULT_API, DEFAULT_PLAYER);
+      recreateWidget(DEFAULT_PLAYER, DEFAULT_API);
+    });
+  </script>
+</body>
+</html>
