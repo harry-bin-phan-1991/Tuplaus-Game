@@ -1,0 +1,631 @@
+$paper: #ffffff;
+$paper-edge: #e5e7eb;
+$ink: #0f172a;
+$heart: #e11d48;
+$blue: #0ea5e9;
+$blue-d: #0369a1;
+$shadow: 0 12px 28px rgba(0,0,0,.35);
+
+// Main Theme Colors
+$background-main: #f0f2f5;
+$background-card: #ffffff;
+$background-header: #f8f9fa;
+$card-border: #d9dce0;
+$header-border: #dee2e6;
+$text-main: #333;
+$text-light: #555;
+$text-headings: #111;
+
+// Card Specific Colors
+$card-face-bg: #fdfdfd;
+$card-face-border: #d1d5db;
+$card-back-bg: #0003FE;
+
+// Button Colors
+$btn-disabled-bg: #e9ecef;
+$btn-disabled-text: #adb5bd;
+$btn-win-bg: #28a745;
+$btn-win-text-shadow: #2ecc71; // For win animation glow
+
+// Logo Colors
+$logo-circle-bg: #0708A0;
+$logo-header-color: #333;
+$logo-white: #ffffff;
+
+// Heart/Suit Colors
+$heart-main: #e11d48;
+$heart-gradient-start: #ff7b7b;
+$heart-gradient-end: #c40000;
+
+// Unused Portrait Colors (will be removed with styles)
+$portrait-border: #333;
+$crown-j-bg: #fbbf24;
+$crown-q-bg: #f472b6;
+$crown-k-bg: #f59e0b;
+$portrait-body-bg: #e2e8f0;
+$sash-q-border: #fcd34d;
+$sash-q-grad-red: #ef4444;
+$sash-j-grad-blue: #2563eb;
+$shoulder-pad-bg: #9ca3af;
+
+@mixin elevate($blur: 28px, $alpha: .35) { box-shadow: 0 10px $blur rgba(0,0,0,$alpha); }
+
+/* Base card shell for CSS-rendered cards */
+.css-card {
+  width: 180px;
+  height: 250px;
+  border-radius: 10px;
+  position: relative;
+  display: flex;
+  font-family: 'Georgia', serif;
+  box-sizing: border-box;
+  cursor: pointer;
+  user-select: none;
+  transition: all .2s;
+  
+  // Realistic paper texture and lighting - REMOVED semi-transparent overlay
+  border: 1px solid rgba(0,0,0,0.2);
+  background: 
+    url('data:image/svg+xml,%3Csvg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23d4d4d4" fill-opacity="0.1"%3E%3Cpath d="M50 50c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10c-5.523 0-10-4.477-10-10zm10 2c-4.418 0-8-3.582-8-8s3.582-8 8-8 8 3.582 8 8-3.582 8-8 8zm-30-12c-5.523 0-10-4.477-10-10s4.477-10 10-10 10 4.477 10 10-4.477 10-10 10zm0-2c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8z" /%3E%3C/g%3E%3C/g%3E%3C/svg%3E'),
+    $card-face-bg; // Solid, slightly off-white background
+  box-shadow: 
+    0 2px 5px rgba(0,0,0,0.1), 
+    0 8px 20px rgba(0,0,0,0.15),
+    inset 0 0 0 1px rgba(255,255,255,0.7);
+  
+  &.mini {
+    width: 60px;
+    height: 84px;
+    border-radius: 5px;
+    border-width: 1px;
+    font-size: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.1);
+    .corner { padding: 4px; }
+    .heart { width: 10px; height: 10px; }
+  }
+}
+.css-card::after { content: ""; position: absolute; inset: 10px; border-radius: 10px; border: 1px solid $card-face-border; opacity: .9; }
+.css-card.mini { width: 66px; height: 96px; }
+.css-card.large { width: 200px; height: 280px; }
+.css-card.covered { background: repeating-linear-gradient(45deg, $blue 0, $blue 10px, $blue-d 10px, $blue-d 20px); border-color: rgba(255,255,255,0.3); }
+
+/* Corners */
+.css-card .corner { position: absolute; display: grid; place-items: center; gap: 2px; color: $heart-main; }
+.css-card .corner.tl { top: 8px; left: 8px; }
+.css-card .corner.br { bottom: 8px; right: 8px; transform: rotate(180deg); }
+.css-card .rank { font-family: ui-sans-serif, system-ui; font-weight: 800; font-size: 14px; line-height: 1; }
+.css-card.large .rank { font-size: 16px; }
+
+/* Heart (pure CSS) */
+.heart {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.3));
+
+  &::before, &::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 50%;
+    height: 80%;
+    background: radial-gradient(circle at 60% 35%, $heart-gradient-start, $heart-gradient-end 60%);
+    border-radius: 50% 50% 0 0;
+    transform: rotate(-45deg);
+    transform-origin: 0 100%;
+    box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
+  }
+  &::after {
+    left: 0;
+    transform: rotate(45deg);
+    transform-origin: 100% 100%;
+  }
+}
+.heart-lg { width: 22px; height: 22px; }
+.heart-lg::before, .heart-lg::after { width: 11px; height: 16px; border-radius: 11px 11px 0 0; }
+
+/* Center content */
+.css-card .center { position: absolute; inset: 0; display: grid; place-items: center; gap: 8px; text-align: center; }
+.css-card .rank-lg { font-family: ui-sans-serif, system-ui; font-size: 60px; font-weight: 800; color: $heart-main; text-shadow: 0 3px 10px rgba(0,0,0,.25); line-height: 1; }
+
+/* Center content */
+.css-card .center { position: absolute; inset: 0; display: grid; place-items: center; gap: 8px; text-align: center; }
+
+.corner {
+  position: absolute;
+  padding: 10px;
+
+  .heart {
+    width: 25px;
+    height: 25px;
+  }
+  &.tl { top: 0; left: 0; }
+  &.tr { top: 0; right: 0; }
+  &.bl { bottom: 0; left: 0; }
+  &.br { bottom: 0; right: 0; }
+}
+
+.center {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.rank-center {
+  font-size: 110px;
+  font-weight: bold;
+  font-family: 'Times New Roman', Times, serif;
+  color: $heart-gradient-end;
+  line-height: 1;
+  text-shadow: 
+    2px 2px 0px rgba(255, 255, 255, 0.7), 
+    4px 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* NEW ANIMATED GAME FLOW STYLES */
+
+.game-table {
+  position: relative;
+  width: 100%;
+  height: 350px; /* Increased height */
+  display: grid;
+  place-items: center;
+  perspective: 1200px; /* Add perspective for 3D transforms */
+}
+
+.deck-container {
+  position: relative;
+  width: 180px;
+  height: 250px;
+
+  .card-in-deck {
+    position: absolute;
+    inset: 0;
+    transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+  }
+}
+
+/* 1. REVEALING: Lay out cards in a grid for full clarity */
+.deck-container.revealing {
+  .card-in-deck {
+    transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s;
+  }
+  /* Top Row of 7 */
+  @for $i from 1 through 7 {
+    .card-in-deck:nth-child(#{$i}) {
+      $x: ($i - 4) * 125px;
+      transform: translateX(#{$x}) translateY(-110px) scale(0.7);
+    }
+  }
+  /* Bottom Row of 6 */
+  @for $i from 8 through 13 {
+    .card-in-deck:nth-child(#{$i}) {
+      $x: ($i - 10.5) * 125px;
+      transform: translateX(#{$x}) translateY(110px) scale(0.7);
+    }
+  }
+}
+
+/* 2a. COVERING: Cards flip in place in their grid positions */
+.deck-container.covering .card-in-deck {
+  /* Maintain grid position and flip */
+  /* Top Row of 7 */
+  @for $i from 1 through 7 {
+    &:nth-child(#{$i}) {
+      $x: ($i - 4) * 125px;
+      transform: translateX(#{$x}) translateY(-110px) scale(0.7) rotateY(180deg);
+    }
+  }
+  /* Bottom Row of 6 */
+  @for $i from 8 through 13 {
+    &:nth-child(#{$i}) {
+      $x: ($i - 10.5) * 125px;
+      transform: translateX(#{$x}) translateY(110px) scale(0.7) rotateY(180deg);
+    }
+  }
+}
+
+/* 2b. GATHERING: Cards gather into a stack */
+.deck-container.gathering .card-in-deck {
+  transform: rotateY(180deg); /* Keep them face down */
+  transition-delay: 0ms !important; /* Animate simultaneously */
+}
+
+/* 2c. SHUFFLING: Simulate a riffle shuffle */
+.deck-container.shuffling {
+  .card-in-deck {
+    transform: rotateY(180deg);
+    animation: shuffle-animation 0.5s ease-in-out forwards;
+  }
+  @for $i from 1 through 13 {
+    .card-in-deck:nth-child(#{$i}) {
+      animation-delay: #{$i * 0.02}s;
+    }
+  }
+}
+
+@keyframes shuffle-animation {
+  0%, 100% { transform: translateY(0) rotateY(180deg); }
+  25% { transform: translateY(-15px) rotateY(180deg) rotateZ(-2deg); }
+  75% { transform: translateY(15px) rotateY(180deg) rotateZ(2deg); }
+}
+
+/* 2d. SPREADING: Deal cards back out, face-down */
+.deck-container.spreading {
+  .card-in-deck {
+    transform: rotateY(180deg); /* Keep face down */
+  }
+  @for $i from 1 through 13 {
+    .card-in-deck:nth-child(#{$i}) {
+      $translateX: ($i - 7) * 40px;
+      transform: translateX(#{$translateX}) rotateY(180deg);
+    }
+  }
+}
+
+/* READY STATE: Cards are spread and waiting */
+.deck-container.ready .card-in-deck {
+  @for $i from 1 through 13 {
+    &:nth-child(#{$i}) {
+      $translateX: ($i - 7) * 40px;
+      transform: translateX(#{$translateX}) rotateY(180deg);
+    }
+  }
+}
+
+/* 3. DRAWING: The chosen card flips and moves */
+.deck-container.drawing {
+  .card-in-deck { /* Keep non-chosen cards in place */
+    @for $i from 1 through 13 {
+      &:nth-child(#{$i}) {
+        $translateX: ($i - 7) * 40px;
+        transform: translateX(#{$translateX}) rotateY(180deg);
+      }
+    }
+  }
+  
+  .card-in-deck.is-drawn {
+    transform: translateY(150px) scale(1.1) rotateY(0deg); /* Move down, scale up, and flip */
+    z-index: 100;
+  }
+}
+
+/* Hide the card that's being "drawn" from the spread */
+.deck-container .card-in-deck.is-drawn-from-spread {
+  opacity: 0;
+  transition: opacity 0.1s ease-in;
+}
+
+.result-card-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 200;
+  transform-style: preserve-3d; /* Enable 3D space for children */
+  
+  /* Initial state: at the card's starting position in the spread, scaled down and flipped */
+  transform: translate(calc(-50% + var(--start-x, 0px)), calc(-50% + var(--start-y, 0px))) scale(0.7) rotateY(180deg);
+  
+  .card-face-front, .card-face-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+  }
+  .card-face-back {
+    transform: rotateY(180deg);
+  }
+}
+
+/* State when drawing: run the combined travel-and-flip animation */
+.result-card-container.drawing {
+  animation: travel-and-flip-late 1.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes travel-and-flip-late {
+  0% {
+    transform: translate(calc(-50% + var(--start-x)), calc(-50% + var(--start-y))) scale(0.7) rotateY(180deg);
+  }
+  40% {
+    /* Start flipping earlier in the timeline, still moving */
+    transform: translate(calc(-30% + var(--start-x) * 0.4), calc(-30% + var(--start-y) * 0.4)) scale(1.15) rotateY(180deg);
+  }
+  100% {
+    /* Flip completes as it settles */
+    transform: translate(-50%, -50%) scale(1.1) rotateY(360deg);
+  }
+}
+
+/* State after drawing: hold position */
+.result-card-container.result {
+  transform: translate(-50%, -50%) scale(1.1);
+}
+
+/* State when cleaning up for next round */
+.result-card-container.cleanup {
+  transition: transform 0.4s ease-in, opacity 0.4s ease-in;
+  transform: translate(-50%, 200%) scale(0.8);
+  opacity: 0;
+}
+
+/* Remove old result-text absolute positioning */
+.result-text {
+  display: none;
+}
+
+.controls-footer {
+  min-height: 120px; /* Reserve space for controls */
+  z-index: 20;
+}
+
+@keyframes draw-card-in {
+  from {
+    transform: translateY(-250px) scale(0);
+  }
+  to {
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Hide play buttons when not ready */
+.controls .radix-themes:not(.ready) .play-buttons {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.game-container {
+  background-color: $background-main; /* Light, clean background */
+  min-height: 650px;
+  position: relative;
+  overflow: hidden;
+  color: $text-main;
+  border: 1px solid $card-border;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+
+  .radix-card {
+    background-color: $background-card !important;
+    border: 1px solid $card-border !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+  }
+
+  .radix-themes .rt-Text {
+    color: $text-light;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    color: $text-headings;
+  }
+}
+
+.game-header {
+  background-color: $background-header;
+  border-bottom: 1px solid $header-border;
+}
+
+.game-button {
+  min-width: 150px;
+  transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+  cursor: pointer;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    cursor: pointer;
+  }
+
+  &:disabled {
+    background-color: $btn-disabled-bg !important;
+    color: $btn-disabled-text !important;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+.game-button-win {
+  background-color: $btn-win-bg !important;
+}
+
+.company-logo {
+  height: 32px;
+  width: auto;
+  color: $logo-header-color;
+}
+
+.logo-with-circle {
+  background-color: $logo-circle-bg;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+
+.logo-white {
+  width: 55%;
+  height: 55%;
+  color: $logo-white;
+}
+
+.bet-input-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: $text-light;
+}
+
+.bet-input {
+  max-width: 120px;
+  text-align: center;
+  font-size: 1.2rem !important;
+}
+
+.card-back-pattern {
+  width: 100%;
+  height: 100%;
+  background-color: $card-back-bg;
+  position: relative;
+  overflow: hidden;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(255, 255, 255, 0.1),
+    rgba(255, 255, 255, 0.1) 10px,
+    transparent 10px,
+    transparent 20px
+  );
+  border: 6px solid $logo-white;
+  border-radius: inherit;
+  box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.2);
+  display: grid;
+  place-items: center;
+}
+
+.card-back-logo {
+  width: 60%;
+  height: auto;
+  color: $logo-white;
+}
+
+.result-controls .rt-Heading {
+  transition: transform 0.3s;
+}
+.result-controls.win-animation .rt-Heading {
+  animation: win-animation 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+}
+.result-controls.lose-animation .rt-Heading {
+  animation: lose-animation 0.5s ease-in-out;
+}
+
+@keyframes win-animation {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2) rotate(-3deg); color: $btn-win-text-shadow; text-shadow: 0 0 20px rgba(46, 204, 113, 0.7); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes lose-animation {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px) rotate(-2deg); }
+  40% { transform: translateX(6px) rotate(2deg); }
+  60% { transform: translateX(-6px) rotate(-2deg); }
+  80% { transform: translateX(6px) rotate(2deg); }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1024px) {
+  .css-card {
+    width: 120px;
+    height: 168px;
+  }
+  .result-card-container {
+    .card-face-front, .card-face-back {
+      width: 120px;
+      height: 168px;
+    }
+  }
+  .rank-center {
+    font-size: 80px;
+  }
+
+  .deck-container.revealing {
+    @for $i from 1 through 7 {
+      .card-in-deck:nth-child(#{$i}) {
+        $x: ($i - 4) * 90px;
+        transform: translateX(#{$x}) translateY(-80px) scale(0.6);
+      }
+    }
+    @for $i from 8 through 13 {
+      .card-in-deck:nth-child(#{$i}) {
+        $x: ($i - 10.5) * 90px;
+        transform: translateX(#{$x}) translateY(80px) scale(0.6);
+      }
+    }
+  }
+  
+  .deck-container.spreading, .deck-container.ready {
+    @for $i from 1 through 13 {
+      .card-in-deck:nth-child(#{$i}) {
+        $translateX: ($i - 7) * 30px;
+        transform: translateX(#{$translateX}) rotateY(180deg);
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .game-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch !important;
+    padding-bottom: 12px;
+  }
+
+  .game-container {
+    min-height: 90vh; /* More vertical space on mobile */
+  }
+  
+  .css-card {
+    width: 70px;
+    height: 98px;
+  }
+  .result-card-container {
+    .card-face-front, .card-face-back {
+      width: 70px;
+      height: 98px;
+    }
+  }
+  .rank-center {
+    font-size: 40px;
+  }
+  .corner .heart {
+    width: 15px;
+    height: 15px;
+  }
+  
+  .game-header {
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch !important;
+  }
+
+  .deck-container.revealing {
+    @for $i from 1 through 5 {
+      .card-in-deck:nth-child(#{$i}) {
+        $x: ($i - 3) * 60px;
+        transform: translateX(#{$x}) translateY(-80px) scale(0.45);
+      }
+    }
+    @for $i from 6 through 9 {
+      .card-in-deck:nth-child(#{$i}) {
+        $x: ($i - 7.5) * 60px;
+        transform: translateX(#{$x}) translateY(0px) scale(0.45);
+      }
+    }
+    @for $i from 10 through 13 {
+      .card-in-deck:nth-child(#{$i}) {
+        $x: ($i - 11.5) * 60px;
+        transform: translateX(#{$x}) translateY(80px) scale(0.45);
+      }
+    }
+  }
+  
+  .deck-container.spreading, .deck-container.ready {
+    @for $i from 1 through 13 {
+      .card-in-deck:nth-child(#{$i}) {
+        $translateX: ($i - 7) * 18px;
+        transform: translateX(#{$translateX}) rotateY(180deg);
+      }
+    }
+  }
+  
+  .controls-footer .game-button {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+}
