@@ -498,9 +498,7 @@
     const CONFIG = {
       DEFAULT_PLAYER: 'player-on-external-site',
       DEFAULT_API: 'http://localhost:4000/graphql',
-      DEFAULT_ORIGINS: 'http://localhost:8080',
-      RETRY_ATTEMPTS: 3,
-      RETRY_DELAY: 1000
+      DEFAULT_ORIGINS: 'http://localhost:8080'
     };
 
     // UI State management
@@ -641,53 +639,6 @@
         this.widget = this.ui.elements.widget;
       }
 
-      async ensurePlayer(apiUrl, playerId, retries = CONFIG.RETRY_ATTEMPTS) {
-        const query = `
-          mutation CreatePlayer($id: String!) { 
-            createPlayer(id: $id) { 
-              id 
-              balance 
-            } 
-          }
-        `;
-
-        for (let attempt = 1; attempt <= retries; attempt++) {
-          try {
-            const response = await fetch(apiUrl, {
-              method: 'POST',
-              headers: { 
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-              },
-              body: JSON.stringify({ 
-                query, 
-                variables: { id: playerId } 
-              })
-            });
-
-            if (!response.ok) {
-              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-
-            const data = await response.json();
-            if (data.errors) {
-              throw new Error(data.errors[0]?.message || 'GraphQL error');
-            }
-
-            return data.data?.createPlayer;
-          } catch (error) {
-            console.warn(`Player creation attempt ${attempt} failed:`, error);
-            
-            if (attempt === retries) {
-              throw new Error(`Failed to create player after ${retries} attempts: ${error.message}`);
-            }
-            
-            // Wait before retry
-            await new Promise(resolve => setTimeout(resolve, CONFIG.RETRY_DELAY * attempt));
-          }
-        }
-      }
-
       recreateWidget(playerId, apiUrl) {
         const parent = this.widget.parentNode;
         const newWidget = document.createElement('tuplaus-widget');
@@ -732,9 +683,6 @@
           throw new Error('Invalid API URL format');
         }
 
-        // Ensure player exists
-        await this.ensurePlayer(apiUrl, playerId);
-        
         // Recreate widget with new configuration
         this.recreateWidget(playerId, apiUrl);
         
