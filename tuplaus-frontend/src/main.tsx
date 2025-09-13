@@ -12,7 +12,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <Theme>
-        <App playerId="local-dev-player" apiUrl="http://localhost:4000/graphql" />
+        <App playerId="e2e-create-or-load" apiUrl="http://localhost:4000/graphql" />
       </Theme>
     </QueryClientProvider>
   </React.StrictMode>,

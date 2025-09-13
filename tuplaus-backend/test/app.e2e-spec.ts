@@ -56,6 +56,28 @@ describe('Game (e2e)', () => {
     expect(player.activeWinnings).toBe(0);
   });
 
+  it('getOrCreatePlayer should create when missing and then be idempotent', async () => {
+    const id = 'e2e-create-or-load';
+    await prisma.player.deleteMany({ where: { id } });
+
+    const createQuery = `
+      mutation { getOrCreatePlayer(id: "${id}") { id balance activeWinnings } }
+    `;
+    await graphql(createQuery)
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.data.getOrCreatePlayer).toEqual({ id, balance: 1000, activeWinnings: 0 });
+      });
+
+    // Call again, should return same values (not overwrite if changed)
+    await prisma.player.update({ where: { id }, data: { balance: 700, activeWinnings: 30 } });
+    await graphql(createQuery)
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.data.getOrCreatePlayer).toEqual({ id, balance: 700, activeWinnings: 30 });
+      });
+  });
+
   it('should allow a player to play a round and lose, resetting winnings', async () => {
     // First, give the player some winnings to lose
     await prisma.player.update({ where: { id: playerId }, data: { balance: 1000, activeWinnings: 50 } });

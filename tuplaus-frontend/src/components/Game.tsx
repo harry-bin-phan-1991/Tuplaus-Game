@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { graphqlRequest } from '../lib/api';
+import { graphqlRequest, GET_OR_CREATE_PLAYER_MUTATION } from '../lib/api';
 import { useGameStore } from '../store/gameStore';
 import { useEffect, useState, useRef } from 'react';
 import { Card as RadixCard, Text, Button, Flex, Heading, Box, TextField } from '@radix-ui/themes';
@@ -57,6 +57,16 @@ export function Game() {
     enabled: !!playerId && !!apiUrl,
   });
 
+  const getOrCreatePlayer = useMutation({
+    mutationFn: () => {
+      if (!playerId || !apiUrl) throw new Error('Player or API URL not set');
+      return graphqlRequest(apiUrl, GET_OR_CREATE_PLAYER_MUTATION, { id: playerId });
+    },
+    onSuccess: () => {
+      refetchPlayer();
+    },
+  });
+
   const runRoundSequence = () => {
     setGameState('CLEANUP');
     setTimeout(() => {
@@ -73,6 +83,9 @@ export function Game() {
   };
 
   useEffect(() => {
+    if (playerId && apiUrl) {
+      getOrCreatePlayer.mutate();
+    }
     if (playerData?.player) {
       setBalance(playerData.player.balance);
       setWinnings(playerData.player.activeWinnings);
@@ -80,7 +93,7 @@ export function Game() {
         runRoundSequence();
       }
     }
-  }, [playerData, gameState]);
+  }, [playerId, apiUrl, playerData, gameState]);
 
   const { mutate: playRound, isPending: isPlaying } = useMutation({
     mutationFn: (choice: 'small' | 'large') => {

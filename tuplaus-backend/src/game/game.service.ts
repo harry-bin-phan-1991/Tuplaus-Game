@@ -23,6 +23,14 @@ export class GameService {
     });
   }
 
+  async getOrCreatePlayer(id: string) {
+    return this.prisma.player.upsert({
+      where: { id },
+      update: {},
+      create: { id, balance: 1000, activeWinnings: 0 },
+    });
+  }
+
   async playRound(playRoundInput: PlayRoundInput) {
     const { playerId, bet, choice } = playRoundInput;
 

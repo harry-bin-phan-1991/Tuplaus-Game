@@ -22,9 +22,8 @@ export class GameResolver {
     return this.gameService.getPlayer(id);
   }
 
-  // A mutation to create a player for testing, starting with 1000 balance
   @Mutation(() => Player)
-  createPlayer(@Args('id', { type: () => String }) id: string) {
-    return this.gameService.createPlayerForTesting(id);
+  getOrCreatePlayer(@Args('id', { type: () => String }) id: string) {
+    return this.gameService.getOrCreatePlayer(id);
   }
 }

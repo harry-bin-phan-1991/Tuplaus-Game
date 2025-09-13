@@ -9,7 +9,7 @@ export const graphqlRequest = async (apiUrl: string, query: string, variables?: 
       headers: { 'Content-Type': 'application/json' },
     });
     if (response.data.errors) {
-      throw new Error(response.data.errors.map((e: any) => e.message).join('\\n'));
+      throw new Error(response.data.errors.map((e: any) => e.message).join('\n'));
     }
     return response.data.data;
   } catch (error) {
@@ -17,3 +17,13 @@ export const graphqlRequest = async (apiUrl: string, query: string, variables?: 
     throw error;
   }
 };
+
+export const GET_OR_CREATE_PLAYER_MUTATION = `
+  mutation GetOrCreatePlayer($id: String!) {
+    getOrCreatePlayer(id: $id) {
+      id
+      balance
+      activeWinnings
+    }
+  }
+`;

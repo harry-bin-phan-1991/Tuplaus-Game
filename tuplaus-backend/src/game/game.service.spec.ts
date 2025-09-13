@@ -14,6 +14,7 @@ const db = {
   player: {
     findUnique: jest.fn(),
     update: jest.fn(),
+    upsert: jest.fn(),
   },
   gameRound: {
     create: jest.fn(),
@@ -115,6 +116,38 @@ describe('GameService', () => {
 
       expect(result.balance).toBe(100);
       expect(db.player.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getOrCreatePlayer', () => {
+    it('creates a new player with default values when not existing', async () => {
+      db.player.upsert.mockResolvedValue({ id: 'p1', balance: 1000, activeWinnings: 0, createdAt: new Date() });
+
+      // @ts-expect-error - method will be added in implementation
+      const player = await service.getOrCreatePlayer('p1');
+
+      expect(db.player.upsert).toHaveBeenCalledWith({
+        where: { id: 'p1' },
+        update: {},
+        create: { id: 'p1', balance: 1000, activeWinnings: 0 },
+      });
+      expect(player.balance).toBe(1000);
+      expect(player.activeWinnings).toBe(0);
+    });
+
+    it('returns existing player without overwriting values', async () => {
+      db.player.upsert.mockResolvedValue({ id: 'p2', balance: 250, activeWinnings: 40, createdAt: new Date() });
+
+      // @ts-expect-error - method will be added in implementation
+      const player = await service.getOrCreatePlayer('p2');
+
+      expect(db.player.upsert).toHaveBeenCalledWith({
+        where: { id: 'p2' },
+        update: {},
+        create: { id: 'p2', balance: 1000, activeWinnings: 0 },
+      });
+      expect(player.balance).toBe(250);
+      expect(player.activeWinnings).toBe(40);
     });
   });
 });

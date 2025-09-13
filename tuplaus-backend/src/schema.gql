@@ -11,7 +11,7 @@ type GameRound {
 
 type Mutation {
   cashOut(playerId: String!): Player!
-  createPlayer(id: String!): Player!
+  getOrCreatePlayer(id: String!): Player!
   playRound(playRoundInput: PlayRoundInput!): GameRound!
 }
 
