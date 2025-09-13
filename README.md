@@ -1,66 +1,73 @@
-# Tuplaus Game Project
+***
 
-This project is a full-stack implementation of the Finnish card game "Tuplaus". It includes a NestJS GraphQL backend, a React frontend (also available as a Web Component), and a PostgreSQL database managed with Docker.
+# Tuplaus Game
 
-## Project Structure
+Finnish card game thing. NestJS backend with GraphQL, React frontend that can also spit out a web component.
 
-- `/tuplaus-backend`: NestJS + GraphQL + Prisma backend
-- `/tuplaus-frontend`: React + Vite + TypeScript frontend (builds a Web Component)
-- `docker-compose.yml`: PostgreSQL database
+## What's where
+```
+/tuplaus-backend     # NestJS + GraphQL + Prisma + usual suspects
+/tuplaus-frontend    # React + Vite (SPA + widget build) + more stuff
+docker-compose.yml   # Just Postgres for now
+```
 
-## Local Run (Quick Start)
+## Getting it running
 
-1. Start database:
-   ```bash
-   docker compose up -d
-   ```
-2. Backend:
-   ```bash
-   cd tuplaus-backend
-   npm install
-   # Prepare DB schema (safe to run repeatedly)
-   npx prisma migrate deploy
-   npm run start:dev
-   # GraphQL at http://localhost:4000/graphql
-   ```
-3. Frontend (dev):
-   ```bash
-   cd tuplaus-frontend
-   npm install
-   npm run dev
-   # App at http://localhost:5173
-   ```
+Database first:
+```bash
+docker compose up -d
+```
+
+Backend:
+```bash
+cd tuplaus-backend
+npm install
+npx prisma migrate deploy
+npm run start:dev
+# GraphQL playground: http://localhost:4000/graphql
+```
+
+Frontend:
+```bash
+cd tuplaus-frontend  
+npm install
+npm run dev
+# http://localhost:5173
+```
+
+### Or just run backend + DB in Docker
+```bash
+docker compose up -d --build
+# Backend: http://localhost:4000/graphql
+# DB: localhost:5432 (postgres/password123, db name: tuplaus_db)
+```
+Then run frontend normally and point it at `http://localhost:4000/graphql`. 
+
+For the demo page stuff, serve `test.html` from repo root while backend runs in Docker.
 
 ## Tests
 
-- Backend e2e:
-  ```bash
-  cd tuplaus-backend
-  npm run test:e2e
-  ```
-- Frontend unit:
-  ```bash
-  cd tuplaus-frontend
-  npm run test
-  ```
+```bash
+# backend e2e (actually hits the DB)
+cd tuplaus-backend && npm run test:e2e
 
----
+# frontend unit tests  
+cd tuplaus-frontend && npm run test
+```
 
-## API Documentation
+## GraphQL stuff
 
-GraphQL endpoint (local): `http://localhost:4000/graphql`
+Hit: `http://localhost:4000/graphql`
 
-### Schema (core types)
+### Schema bits
 
 ```graphql
-# Inputs
 input PlayRoundInput {
   playerId: String!
-  bet: Float!
-  choice: String! # "small" | "large"
+  bet: Float!  
+  choice: String! # "small" or "large"
 }
 
-# Objects
 type GameRound {
   drawnCard: Int!
   didWin: Boolean!
@@ -73,156 +80,193 @@ type Player {
   balance: Float!
   activeWinnings: Float!
 }
-
-# Queries
-extend type Query {
-  player(id: String!): Player
-}
-
-# Mutations
-extend type Mutation {
-  # Upsert: creates if missing, returns existing otherwise (does not overwrite balance/winnings)
-  getOrCreatePlayer(id: String!): Player!
-  playRound(playRoundInput: PlayRoundInput!): GameRound!
-  cashOut(playerId: String!): Player!
-}
 ```
 
-### Example requests
+### What you can call
 
-Create or load player (idempotent):
-```bash
-curl -X POST http://localhost:4000/graphql \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "query": "mutation($id:String!){ getOrCreatePlayer(id:$id){ id balance activeWinnings } }",
-    "variables": { "id": "demo-player" }
-  }'
+```graphql  
+# Creates player if missing, returns existing if found
+getOrCreatePlayer(id: String!): Player!
+
+# Play a round
+playRound(playRoundInput: PlayRoundInput!): GameRound!
+
+# Move winnings to balance
+cashOut(playerId: String!): Player!
+
+# Just get player info
+player(id: String!): Player
 ```
 
-Play a round (small):
+### curl examples (if you're into that)
+
+Make a player:
 ```bash
-curl -X POST http://localhost:4000/graphql \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "query": "mutation($i:PlayRoundInput!){ playRound(playRoundInput:$i){ drawnCard didWin winnings newBalance } }",
-    "variables": { "i": { "playerId":"demo-player", "bet":10, "choice":"small" } }
-  }'
+curl -X POST http://localhost:4000/graphql -H 'Content-Type: application/json' \
+-d '{"query":"mutation($id:String!){getOrCreatePlayer(id:$id){id balance activeWinnings}}","variables":{"id":"test-player"}}'
+```
+
+Play:
+```bash  
+curl -X POST http://localhost:4000/graphql -H 'Content-Type: application/json' \
+-d '{"query":"mutation($i:PlayRoundInput!){playRound(playRoundInput:$i){drawnCard didWin winnings newBalance}}","variables":{"i":{"playerId":"test-player","bet":10,"choice":"small"}}}'
 ```
 
 Cash out:
 ```bash
-curl -X POST http://localhost:4000/graphql \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "query": "mutation($id:String!){ cashOut(playerId:$id){ id balance activeWinnings } }",
-    "variables": { "id": "demo-player" }
-  }'
+curl -X POST http://localhost:4000/graphql -H 'Content-Type: application/json' \
+-d '{"query":"mutation($id:String!){cashOut(playerId:$id){id balance activeWinnings}}","variables":{"id":"test-player"}}'
 ```
 
-Notes:
-- Choice values: `small` (1–6) or `large` (8–13). Card 7 always loses.
-- On loss: bet deducted, `activeWinnings` reset to 0. On win: `activeWinnings += bet*2`.
-- Cash out moves `activeWinnings` into `balance` and resets `activeWinnings` to 0.
-- Player identity: the frontend always calls `getOrCreatePlayer` on startup with the provided `player-id`. If the player exists in DB, their data is loaded; otherwise a new player is created with `balance=1000`, `activeWinnings=0`.
+### How the game works
+- `choice: "small"` = bet on cards 1-6  
+- `choice: "large"` = bet on cards 8-13  
+- Card 7 = you lose, always
+- Win: your winnings double (`activeWinnings += bet*2`)
+- Lose: bet gets subtracted, winnings reset to 0
+- `cashOut()` moves your winnings into your actual balance
 
-### Database connection
+## Database stuff
 
-The backend reads `DATABASE_URL` from environment. For local Docker Postgres in this repo, use:
+If you're running Docker Postgres:
 
 ```bash
 export DATABASE_URL="postgresql://postgres:password123@localhost:5432/tuplaus_db?schema=public"
-```
-
-Then run:
-
-```bash
 cd tuplaus-backend
-npx prisma migrate deploy
+npx prisma migrate deploy  
 npm run start:dev
 ```
 
----
+When you change the schema: `npx prisma migrate dev`
 
-## Web Component Usage
+## Frontend
+
+React app. Can run as normal SPA or build into `<tuplaus-widget>` for embedding.
+
+- State management: zustand (because Redux is overkill)
+- Data fetching: react-query + basic GraphQL helper
+- Dev mode: `src/main.tsx`  
+- Widget mode: reads DOM attributes
+
+### How a game works
+1. App calls `getOrCreatePlayer` when it starts
+2. Loads player data, runs some fancy entrance animations if you have money
+3. You pick Small or Large. If you have winnings, that's your bet. Otherwise uses whatever you typed in.
+4. Calls `playRound`, server decides if you won
+5. Frontend animates the card draw + shows result
+6. If you win: you can Double (keep playing with winnings) or Cash Out (take the money)
+
+### Animation flow
+Goes through these states: `IDLE → CLEANUP → REVEALING → COVERING → GATHERING → SHUFFLING → SPREADING → READY → DRAWING → RESULT`
+
+Each state triggers CSS animations. Timing handled with `setTimeout` chains because that's how we roll.
+
+## Web Component
 
 Build the widget:
 ```bash
 cd tuplaus-frontend
 npm run build
-npm run preview   # serves dist at http://localhost:4173
+npm run preview  # serves at localhost:4173
 ```
 
-Embed in any page (UMD build):
+Drop it anywhere:
 ```html
 <script src="http://localhost:4173/tuplaus-widget.umd.js"></script>
-<tuplaus-widget
+<tuplaus-widget 
   player-id="demo-player"
   api-url="http://localhost:4000/graphql">
 </tuplaus-widget>
 ```
 
-The widget will automatically call `getOrCreatePlayer` with the `player-id` so you can embed it on any site without pre-provisioning users.
+You can add `allow-origins="site1.com,site2.com"` if you want to block certain hosts.
 
-Attributes:
-- `player-id` (required): player identifier to play as
-- `api-url` (required): GraphQL endpoint URL
-- `allow-origins` (optional): comma-separated list of origins allowed to render this widget. If provided and the host origin is not present, the widget refuses to mount.
+### Testing the widget
 
-### Quick test of `test.html`
-
-Terminal A (serve widget build):
+Terminal 1:
 ```bash
-cd tuplaus-frontend
-npm run build && npm run preview
+cd tuplaus-frontend && npm run build && npm run preview
 ```
 
-Terminal B (serve demo page at repo root):
-```bash
-cd ..
+Terminal 2 (from repo root):  
+```bash  
 npx serve -l 8080
 ```
-Then open `http://localhost:8080/test.html`.
 
-Local demo page:
-- A ready-made `test.html` is included at repo root. Run `npm run preview` (frontend) and then `npx serve -l 8080` (repo root), then open `http://localhost:8080/test.html`.
-- The demo lets you change `player-id` and `api-url` dynamically. It will pre-create the player before remounting the widget to avoid "not found" errors.
+Go to `http://localhost:8080/test.html` - lets you mess with player IDs and API URLs.
 
-Deployment notes:
-- Host the built JS file (UMD or ES) on a static server/CDN and include it via `<script>` on any site that should embed the widget.
-- If you want to restrict where the widget can be used from the client side, set `allow-origins="https://example.com, https://demo.com"` on the tag.
-- On the server side (backend), enforce CORS to only allow expected origins (see below).
+## CORS stuff
 
----
-
-## CORS / Origin controls
-
-### Backend (NestJS)
-CORS is enabled in `main.ts`. To restrict allowed origins, replace `app.enableCors()` with a whitelist:
+Backend (if you want to lock it down):
 ```ts
 app.enableCors({
-  origin: [
-    'http://localhost:8080',
-    'https://your-host-site.com'
-  ],
+  origin: ['http://localhost:8080', 'https://yoursite.com'],
   credentials: false,
 });
 ```
 
-### Frontend Web Component
-The widget supports an optional `allow-origins` attribute. If present, it compares `window.location.origin` against the comma-separated list:
-```html
-<tuplaus-widget
-  player-id="demo-player"
-  api-url="https://api.example.com/graphql"
-  allow-origins="https://host1.example.com, https://host2.example.com">
-</tuplaus-widget>
+The widget checks `allow-origins` if you set it.
+
+## Random notes
+
+- Prisma handles all the DB migration stuff
+- Every round gets logged to DB (for debugging/audit)
+- E2E tests can force specific card outcomes 
+- New players get balance=1000, activeWinnings=0
+
+## Docker setup
+
+Run backend + DB together:
+```bash
+docker compose up -d --build
+# Backend: http://localhost:4000/graphql
+# DB: localhost:5432 (postgres/password123/tuplaus_db)
 ```
-If the current origin isn’t listed, the widget shows a short warning and refuses to render.
 
----
+Backend container connects to postgres container by service name. On startup it runs `prisma migrate deploy` then boots NestJS.
 
-## Notes
-- Database migrations are managed via Prisma. Run `npx prisma migrate dev` in `/tuplaus-backend` to evolve schema locally.
-- Rounds are logged in the `GameRound` table for auditability.
-- See `test/app.e2e-spec.ts` in the backend for examples of forced outcomes and DB assertions.
+Check logs:
+```bash
+docker compose logs -f backend
+```
+
+Nuke everything and start over:
+```bash
+docker compose down -v && docker compose up -d --build
+```
+
+## Migrations
+
+Local dev (make a new migration):
+```bash
+cd tuplaus-backend
+# Edit prisma/schema.prisma first, then:
+npx prisma migrate dev --name whatever_you_changed
+```
+
+Just apply existing migrations:
+```bash
+cd tuplaus-backend
+npx prisma migrate deploy
+```
+
+Docker version:
+```bash
+# Backend runs migrate deploy on startup anyway
+docker compose up -d --build
+
+# Or run it manually if needed
+docker compose exec backend npx prisma migrate deploy
+```
+
+Reset everything (careful, this deletes data):
+```bash
+# Local
+cd tuplaus-backend && npx prisma migrate reset
+
+# Docker  
+docker compose down -v && docker compose up -d --build
+```
+
+***
+
