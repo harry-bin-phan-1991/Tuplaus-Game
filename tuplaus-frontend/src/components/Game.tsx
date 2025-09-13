@@ -224,7 +224,7 @@ export function Game() {
               </Heading>
               <Flex gap="3">
                 {lastResult.didWin && winnings > 0 && <Button size="4" onClick={runRoundSequence} className="game-button game-button-win">Double for ${winnings * 2}?</Button>}
-                {winnings > 0 && <Button size="4" variant="soft" onClick={() => cashOutMutation.mutate()} disabled={cashOutMutation.isPending} className="game-button game-button-secondary">Cash Out ${winnings.toFixed(2)}</Button>}
+                {winnings > 0 && <Button size="4" onClick={() => cashOutMutation.mutate()} disabled={cashOutMutation.isPending} className="game-button">Cash Out ${winnings.toFixed(2)}</Button>}
                 {!lastResult.didWin && <Button size="4" onClick={runRoundSequence} className="game-button">Play Again?</Button>}
               </Flex>
             </Flex>

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PlayRoundInput } from './dto/play-round.input';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class GameService {
@@ -27,13 +28,16 @@ export class GameService {
 
     const player = await this.getPlayer(playerId);
 
-    if (player.balance < bet) {
+    const isDoublingDown = player.activeWinnings > 0;
+    const currentBet = isDoublingDown ? player.activeWinnings : bet;
+
+    if (!isDoublingDown && player.balance < currentBet) {
       throw new Error('Insufficient balance.');
     }
 
-    const balanceAfterBet = player.balance - bet;
+    const balanceAfterBet = isDoublingDown ? player.balance : player.balance - currentBet;
     
-    const drawnCard = Math.floor(Math.random() * 13) + 1; // 1-13
+    const drawnCard = crypto.randomInt(1, 14); // 1-13, using CSPRNG
 
     let didWin = false;
     if (drawnCard !== 7 && ((choice.toLowerCase() === 'small' && drawnCard <= 6) || (choice.toLowerCase() === 'large' && drawnCard >= 8))) {
@@ -44,12 +48,12 @@ export class GameService {
     let roundWinnings = 0;
 
     if (didWin) {
-      roundWinnings = bet * 2;
+      roundWinnings = currentBet * 2;
       updatedPlayer = await this.prisma.player.update({
         where: { id: playerId },
         data: {
           balance: balanceAfterBet,
-          activeWinnings: player.activeWinnings + roundWinnings,
+          activeWinnings: roundWinnings, // The new winnings are simply the doubled bet
         },
       });
     } else {
@@ -66,7 +70,7 @@ export class GameService {
     await this.prisma.gameRound.create({
       data: {
         playerId,
-        bet,
+        bet: currentBet,
         choice,
         drawnCard,
         didWin,

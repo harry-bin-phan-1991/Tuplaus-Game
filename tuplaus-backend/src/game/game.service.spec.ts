@@ -2,6 +2,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { GameService } from './game.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotFoundException } from '@nestjs/common';
+import * as crypto from 'crypto';
+
+jest.mock('crypto', () => ({
+  ...jest.requireActual('crypto'),
+  randomInt: jest.fn(),
+}));
 
 // Mock Prisma Service
 const db = {
@@ -38,7 +44,7 @@ describe('GameService', () => {
     it('should handle a win correctly', async () => {
       db.player.findUnique.mockResolvedValue(mockPlayer);
       db.player.update.mockResolvedValue({ ...mockPlayer, balance: 90, activeWinnings: 20 });
-      jest.spyOn(Math, 'random').mockReturnValue(0.1); // Card 2 (small)
+      (crypto.randomInt as jest.Mock).mockReturnValue(2); // Card 2 (small)
 
       const result = await service.playRound({ playerId: 'test', bet: 10, choice: 'small' });
 
@@ -55,7 +61,7 @@ describe('GameService', () => {
     it('should handle a loss correctly', async () => {
       db.player.findUnique.mockResolvedValue(mockPlayer);
       db.player.update.mockResolvedValue({ ...mockPlayer, balance: 90, activeWinnings: 0 });
-      jest.spyOn(Math, 'random').mockReturnValue(0.8); // Card 11 (large)
+      (crypto.randomInt as jest.Mock).mockReturnValue(11); // Card 11 (large)
 
       const result = await service.playRound({ playerId: 'test', bet: 10, choice: 'small' });
 
@@ -70,7 +76,7 @@ describe('GameService', () => {
     it('should always lose on card 7', async () => {
       db.player.findUnique.mockResolvedValue(mockPlayer);
       db.player.update.mockResolvedValue({ ...mockPlayer, balance: 90, activeWinnings: 0 });
-      jest.spyOn(Math, 'random').mockReturnValue(6.5 / 13); // Card 7
+      (crypto.randomInt as jest.Mock).mockReturnValue(7); // Card 7
 
       const result = await service.playRound({ playerId: 'test', bet: 10, choice: 'small' });
 
