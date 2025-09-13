@@ -18,6 +18,8 @@ This project is a full-stack implementation of the Finnish card game "Tuplaus". 
    ```bash
    cd tuplaus-backend
    npm install
+   # Prepare DB schema (safe to run repeatedly)
+   npx prisma migrate deploy
    npm run start:dev
    # GraphQL at http://localhost:4000/graphql
    ```
@@ -79,7 +81,8 @@ extend type Query {
 
 # Mutations
 extend type Mutation {
-  createPlayer(id: String!): Player!
+  # Upsert: creates if missing, returns existing otherwise (does not overwrite balance/winnings)
+  getOrCreatePlayer(id: String!): Player!
   playRound(playRoundInput: PlayRoundInput!): GameRound!
   cashOut(playerId: String!): Player!
 }
@@ -87,12 +90,12 @@ extend type Mutation {
 
 ### Example requests
 
-Create player:
+Create or load player (idempotent):
 ```bash
 curl -X POST http://localhost:4000/graphql \
   -H 'Content-Type: application/json' \
   -d '{
-    "query": "mutation($id:String!){ createPlayer(id:$id){ id balance activeWinnings } }",
+    "query": "mutation($id:String!){ getOrCreatePlayer(id:$id){ id balance activeWinnings } }",
     "variables": { "id": "demo-player" }
   }'
 ```
@@ -121,6 +124,23 @@ Notes:
 - Choice values: `small` (1–6) or `large` (8–13). Card 7 always loses.
 - On loss: bet deducted, `activeWinnings` reset to 0. On win: `activeWinnings += bet*2`.
 - Cash out moves `activeWinnings` into `balance` and resets `activeWinnings` to 0.
+- Player identity: the frontend always calls `getOrCreatePlayer` on startup with the provided `player-id`. If the player exists in DB, their data is loaded; otherwise a new player is created with `balance=1000`, `activeWinnings=0`.
+
+### Database connection
+
+The backend reads `DATABASE_URL` from environment. For local Docker Postgres in this repo, use:
+
+```bash
+export DATABASE_URL="postgresql://postgres:password123@localhost:5432/tuplaus_db?schema=public"
+```
+
+Then run:
+
+```bash
+cd tuplaus-backend
+npx prisma migrate deploy
+npm run start:dev
+```
 
 ---
 
@@ -141,6 +161,8 @@ Embed in any page (UMD build):
   api-url="http://localhost:4000/graphql">
 </tuplaus-widget>
 ```
+
+The widget will automatically call `getOrCreatePlayer` with the `player-id` so you can embed it on any site without pre-provisioning users.
 
 Attributes:
 - `player-id` (required): player identifier to play as
