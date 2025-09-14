@@ -1,5 +1,5 @@
-import { Game } from './components/Game';
-import { useGameStore } from './store/gameStore';
+import { Game } from '@/components/Game';
+import { useGameStore } from '@/features/game/model/gameStore';
 import { useEffect } from 'react';
 
 type AppProps = {

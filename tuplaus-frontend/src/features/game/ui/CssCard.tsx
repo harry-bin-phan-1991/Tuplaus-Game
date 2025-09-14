@@ -23,3 +23,5 @@ export function CssCard({ rank, size = 'large', covered = false }: { rank: numbe
     </div>
   );
 }
+
+

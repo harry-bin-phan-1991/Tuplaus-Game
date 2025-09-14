@@ -1,8 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from '../App';
+import App from '@/App';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Theme } from '@radix-ui/themes';
+import { ErrorBoundary } from '@/shared/ui/ErrorBoundary';
 
 import '../index.css';
 
@@ -65,7 +66,9 @@ class TuplausWidget extends HTMLElement {
       <React.StrictMode>
         <QueryClientProvider client={queryClient}>
           <Theme>
-            <App playerId={playerId} apiUrl={apiUrl} />
+            <ErrorBoundary>
+              <App playerId={playerId} apiUrl={apiUrl} />
+            </ErrorBoundary>
           </Theme>
         </QueryClientProvider>
       </React.StrictMode>

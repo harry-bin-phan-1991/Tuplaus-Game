@@ -1,41 +1,4 @@
-$paper: #ffffff;
-$paper-edge: #e5e7eb;
-$ink: #0f172a;
-$heart: #e11d48;
-$blue: #0ea5e9;
-$blue-d: #0369a1;
-$shadow: 0 12px 28px rgba(0,0,0,.35);
-
-// Main Theme Colors
-$background-main: #f0f2f5;
-$background-card: #ffffff;
-$background-header: #f8f9fa;
-$card-border: #d9dce0;
-$header-border: #dee2e6;
-$text-main: #333;
-$text-light: #555;
-$text-headings: #111;
-
-// Card Specific Colors
-$card-face-bg: #fdfdfd;
-$card-face-border: #d1d5db;
-$card-back-bg: #0003FE;
-
-// Button Colors
-$btn-disabled-bg: #e9ecef;
-$btn-disabled-text: #adb5bd;
-$btn-win-bg: #28a745;
-$btn-win-text-shadow: #2ecc71; // For win animation glow
-
-// Logo Colors
-$logo-circle-bg: #0708A0;
-$logo-header-color: #333;
-$logo-white: #ffffff;
-
-// Heart/Suit Colors
-$heart-main: #e11d48;
-$heart-gradient-start: #ff7b7b;
-$heart-gradient-end: #c40000;
+@use '@/shared/styles/tokens.scss' as *;
 
 // Unused Portrait Colors (will be removed with styles)
 $portrait-border: #333;
@@ -629,3 +592,5 @@ $shoulder-pad-bg: #9ca3af;
     padding: 8px 12px;
   }
 }
+
+

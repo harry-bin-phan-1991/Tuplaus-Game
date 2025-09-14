@@ -2,69 +2,169 @@
 
 # Tuplaus Game
 
-Finnish card game thing. NestJS backend with GraphQL, React frontend that can also spit out a web component.
+A simple, fast “higher-lower” card game:
+- You bet Small (1–6) or Large (8–13). Card 7 always loses.
+- Win: winnings increase; choose to Double (continue) or Cash Out (bank it).
 
-## What's where
+The project has:
+- Backend: NestJS + GraphQL + Prisma (Dockerized).
+- Frontend: React + Vite with a beautiful, animated table and an embeddable Web Component.
+
+## 1) Introduction – how the game and project work
+- The client calls `getOrCreatePlayer(id)` on start, then fetches the player.
+- When you click Small/Large, the client runs `playRound(playRoundInput)` and animates the draw.
+- On win, you can Double (play with winnings) or Cash Out (move winnings to balance).
+- You can run the frontend as a SPA or embed it as `<tuplaus-widget>`.
+
+What’s where:
 ```
-/tuplaus-backend     # NestJS + GraphQL + Prisma + usual suspects
-/tuplaus-frontend    # React + Vite (SPA + widget build) + more stuff
-docker-compose.yml   # Just Postgres for now
+/tuplaus-backend     # NestJS + GraphQL + Prisma
+/tuplaus-frontend    # React + Vite (SPA + widget build)
+docker-compose.yml   # Postgres + backend (compose)
 ```
 
-## Getting it running
+## 2) How to run (quick start)
 
-Database first:
+Priority: run backend + DB with Docker; run frontend normally.
+
+Prerequisites
+- Docker Desktop
+- Node 18+ (tested with Node 22)
+- Yarn 1.x (or npm)
+- Ports: 4000 (backend), 5173 (frontend dev), 4173 (frontend preview), 5432 (Postgres)
+
+Quick Start (backend+DB via Docker, frontend dev)
 ```bash
-docker compose up -d
+# 1) Start backend + DB in Docker (runs migrations automatically)
+docker compose up -d --build
+# Backend: http://localhost:4000/graphql
+
+# 2) Start frontend normally
+cd tuplaus-frontend
+yarn
+yarn dev
+# Frontend: http://localhost:5173
+```
+If migrations fail or you need to re-apply:
+```bash
+docker compose exec backend npx prisma migrate deploy
 ```
 
-Backend:
+Alternative: run backend locally (optional)
 ```bash
 cd tuplaus-backend
 npm install
 npx prisma migrate deploy
 npm run start:dev
-# GraphQL playground: http://localhost:4000/graphql
+# GraphQL: http://localhost:4000/graphql
 ```
 
-Frontend:
+Troubleshooting
+- GraphQL 400 in tests: use `getOrCreatePlayer` (not `createPlayer`).
+- Ports busy: free 4000/5173/5432 or change them.
+- Reset Docker stack: `docker compose down -v && docker compose up -d --build`.
+- First Cypress run downloads a binary; let it complete.
+
+### Embed testing (test.html)
 ```bash
-cd tuplaus-frontend  
-npm install
-npm run dev
-# http://localhost:5173
+# Terminal 1 (build and preview the widget)
+cd tuplaus-frontend
+yarn build
+yarn preview   # http://localhost:4173
+
+# Terminal 2 (serve the demo page from repo root)
+npx serve -l 8080
+
+# Open http://localhost:8080/test.html
+# Adjust player-id and api-url to point to your backend
 ```
 
-### Or just run backend + DB in Docker
+## 3) Architecture – frontend, backend, database
+
+Frontend (tuplaus-frontend)
+- Features: get-or-create flow, animated dealing/shuffle/draw, bet input, win/lose transitions, cash out, responsive layout.
+- Technologies: React + Vite, Zustand (state), React Query (data), Radix UI, SCSS with design tokens.
+- Animations: CSS-driven states (REVEALING → COVERING → GATHERING → SHUFFLING → SPREADING → READY → DRAWING → RESULT) with timed transitions.
+- Tests: Vitest unit tests; Cypress e2e with deterministic network intercepts.
+- Structure (feature-first):
+```
+src/
+  features/
+    game/
+      api/    # GraphQL queries and types
+      model/  # zustand store
+      ui/     # Game UI components and styles
+  shared/
+    api/      # graphqlRequest helper
+    styles/   # design tokens
+    ui/       # shared UI (Logo, ErrorBoundary)
+```
+- Imports use alias `@` → `src`.
+
+Backend (tuplaus-backend)
+- Stack: NestJS + GraphQL + Prisma.
+- APIs (purpose):
+  - `getOrCreatePlayer(id: String!): Player!` – idempotent create-or-load.
+  - `playRound(playRoundInput: PlayRoundInput!): GameRound!` – compute outcome, update winnings/balance.
+  - `cashOut(playerId: String!): Player!` – move `activeWinnings` → `balance`.
+  - `player(id: String!): Player` – fetch player snapshot.
+- Runs migrations on container startup.
+
+Database
+- Primary entity: `Player { id, balance, activeWinnings }`.
+- Game rounds can be logged for audit/debug (implementation detail).
+
+## 4) Project architecture & embed (Web Component)
+
+Dockerization
+- `docker-compose.yml` brings up Postgres and the backend; backend runs `prisma migrate deploy` on boot.
+- Frontend runs locally (hot dev) or builds a UMD bundle for embedding.
+
+Embed – why Web Component (vs iframe)
+- Web Components integrate directly with the host DOM for better theming, events, and footprint.
+- No iframe boundary or extra process; simpler messaging and styling.
+- We provide an `allow-origins` attribute to gate usage per origin.
+
+How the Web Component works
+```html
+<link rel="stylesheet" href="http://localhost:4173/tuplaus-frontend.css">
+<script src="http://localhost:4173/tuplaus-widget.umd.js"></script>
+<tuplaus-widget
+  player-id="demo-player"
+  api-url="http://localhost:4000/graphql"
+  allow-origins="http://localhost:8080">
+</tuplaus-widget>
+```
+- Attributes are read on mount; the component renders the React app inside a light-DOM container.
+
+## 5) Scripts, testing, and references
+
+Useful scripts
 ```bash
-docker compose up -d --build
-# Backend: http://localhost:4000/graphql
-# DB: localhost:5432 (postgres/password123, db name: tuplaus_db)
+# Backend
+cd tuplaus-backend
+npm run start:dev                     # start locally
+npx prisma migrate deploy             # apply migrations
+npm run test:e2e                      # backend e2e
+
+# Frontend
+cd tuplaus-frontend
+yarn dev                              # start dev server
+yarn build                            # build widget UMD
+yarn preview                          # preview build (http://localhost:4173)
+yarn lint                             # lint
+yarn test:unit                        # unit tests (Vitest)
+yarn test:e2e                         # Cypress run
+yarn test:e2e:open                    # Cypress GUI
 ```
-Then run frontend normally and point it at `http://localhost:4000/graphql`. 
 
-For the demo page stuff, serve `test.html` from repo root while backend runs in Docker.
+GraphQL endpoint: `http://localhost:4000/graphql`
 
-## Tests
-
-```bash
-# backend e2e (actually hits the DB)
-cd tuplaus-backend && npm run test:e2e
-
-# frontend unit tests  
-cd tuplaus-frontend && npm run test
-```
-
-## GraphQL stuff
-
-Hit: `http://localhost:4000/graphql`
-
-### Schema bits
-
+Schema snippets
 ```graphql
 input PlayRoundInput {
   playerId: String!
-  bet: Float!  
+  bet: Float!
   choice: String! # "small" or "large"
 }
 
@@ -82,191 +182,24 @@ type Player {
 }
 ```
 
-### What you can call
-
-```graphql  
-# Creates player if missing, returns existing if found
-getOrCreatePlayer(id: String!): Player!
-
-# Play a round
-playRound(playRoundInput: PlayRoundInput!): GameRound!
-
-# Move winnings to balance
-cashOut(playerId: String!): Player!
-
-# Just get player info
-player(id: String!): Player
-```
-
-### curl examples (if you're into that)
-
-Make a player:
+curl examples
 ```bash
+# get or create player
 curl -X POST http://localhost:4000/graphql -H 'Content-Type: application/json' \
 -d '{"query":"mutation($id:String!){getOrCreatePlayer(id:$id){id balance activeWinnings}}","variables":{"id":"test-player"}}'
-```
 
-Play:
-```bash  
+# play a round
 curl -X POST http://localhost:4000/graphql -H 'Content-Type: application/json' \
 -d '{"query":"mutation($i:PlayRoundInput!){playRound(playRoundInput:$i){drawnCard didWin winnings newBalance}}","variables":{"i":{"playerId":"test-player","bet":10,"choice":"small"}}}'
-```
 
-Cash out:
-```bash
+# cash out
 curl -X POST http://localhost:4000/graphql -H 'Content-Type: application/json' \
 -d '{"query":"mutation($id:String!){cashOut(playerId:$id){id balance activeWinnings}}","variables":{"id":"test-player"}}'
 ```
 
-### How the game works
-- `choice: "small"` = bet on cards 1-6  
-- `choice: "large"` = bet on cards 8-13  
-- Card 7 = you lose, always
-- Win: your winnings double (`activeWinnings += bet*2`)
-- Lose: bet gets subtracted, winnings reset to 0
-- `cashOut()` moves your winnings into your actual balance
-
-## Database stuff
-
-If you're running Docker Postgres:
-
-```bash
-export DATABASE_URL="postgresql://postgres:password123@localhost:5432/tuplaus_db?schema=public"
-cd tuplaus-backend
-npx prisma migrate deploy  
-npm run start:dev
-```
-
-When you change the schema: `npx prisma migrate dev`
-
-## Frontend
-
-React app. Can run as normal SPA or build into `<tuplaus-widget>` for embedding.
-
-- State management: zustand (because Redux is overkill)
-- Data fetching: react-query + basic GraphQL helper
-- Dev mode: `src/main.tsx`  
-- Widget mode: reads DOM attributes
-
-### How a game works
-1. App calls `getOrCreatePlayer` when it starts
-2. Loads player data, runs some fancy entrance animations if you have money
-3. You pick Small or Large. If you have winnings, that's your bet. Otherwise uses whatever you typed in.
-4. Calls `playRound`, server decides if you won
-5. Frontend animates the card draw + shows result
-6. If you win: you can Double (keep playing with winnings) or Cash Out (take the money)
-
-### Animation flow
-Goes through these states: `IDLE → CLEANUP → REVEALING → COVERING → GATHERING → SHUFFLING → SPREADING → READY → DRAWING → RESULT`
-
-Each state triggers CSS animations. Timing handled with `setTimeout` chains because that's how we roll.
-
-## Web Component
-
-Build the widget:
-```bash
-cd tuplaus-frontend
-npm run build
-npm run preview  # serves at localhost:4173
-```
-
-Drop it anywhere:
-```html
-<script src="http://localhost:4173/tuplaus-widget.umd.js"></script>
-<tuplaus-widget 
-  player-id="demo-player"
-  api-url="http://localhost:4000/graphql">
-</tuplaus-widget>
-```
-
-You can add `allow-origins="site1.com,site2.com"` if you want to block certain hosts.
-
-### Testing the widget
-
-Terminal 1:
-```bash
-cd tuplaus-frontend && npm run build && npm run preview
-```
-
-Terminal 2 (from repo root):  
-```bash  
-npx serve -l 8080
-```
-
-Go to `http://localhost:8080/test.html` - lets you mess with player IDs and API URLs.
-
-## CORS stuff
-
-Backend (if you want to lock it down):
-```ts
-app.enableCors({
-  origin: ['http://localhost:8080', 'https://yoursite.com'],
-  credentials: false,
-});
-```
-
-The widget checks `allow-origins` if you set it.
-
-## Random notes
-
-- Prisma handles all the DB migration stuff
-- Every round gets logged to DB (for debugging/audit)
-- E2E tests can force specific card outcomes 
-- New players get balance=1000, activeWinnings=0
-
-## Docker setup
-
-Run backend + DB together:
-```bash
-docker compose up -d --build
-# Backend: http://localhost:4000/graphql
-# DB: localhost:5432 (postgres/password123/tuplaus_db)
-```
-
-Backend container connects to postgres container by service name. On startup it runs `prisma migrate deploy` then boots NestJS.
-
-Check logs:
-```bash
-docker compose logs -f backend
-```
-
-Nuke everything and start over:
-```bash
-docker compose down -v && docker compose up -d --build
-```
-
-## Migrations
-
-Local dev (make a new migration):
-```bash
-cd tuplaus-backend
-# Edit prisma/schema.prisma first, then:
-npx prisma migrate dev --name whatever_you_changed
-```
-
-Just apply existing migrations:
-```bash
-cd tuplaus-backend
-npx prisma migrate deploy
-```
-
-Docker version:
-```bash
-# Backend runs migrate deploy on startup anyway
-docker compose up -d --build
-
-# Or run it manually if needed
-docker compose exec backend npx prisma migrate deploy
-```
-
-Reset everything (careful, this deletes data):
-```bash
-# Local
-cd tuplaus-backend && npx prisma migrate reset
-
-# Docker  
-docker compose down -v && docker compose up -d --build
-```
-
+Troubleshooting
+- GraphQL 400 in Cypress/e2e: stick to `getOrCreatePlayer`, not `createPlayer`.
+- Reset Docker stack: `docker compose down -v && docker compose up -d --build`.
+- Free ports 4000/5173/5432 if needed.
 ***
 

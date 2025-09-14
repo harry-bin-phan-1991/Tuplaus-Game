@@ -1,16 +1,15 @@
-/// <reference types="vitest" />
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Game } from './Game';
-import { useGameStore } from '../store/gameStore';
-import { graphqlRequest, GET_OR_CREATE_PLAYER_MUTATION } from '../lib/api';
+import { Game } from '@/components/Game';
+import { useGameStore } from '@/features/game/model/gameStore';
+import { graphqlRequest } from '@/shared/api/graphql';
+import { GET_OR_CREATE_PLAYER_MUTATION } from '@/features/game/api/queries';
 
 // --- Mocks Setup ---
-vi.mock('../lib/api', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('../lib/api')>()
+vi.mock('@/shared/api/graphql', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('@/shared/api/graphql')>()
   return {
     ...mod,
     graphqlRequest: vi.fn(),
