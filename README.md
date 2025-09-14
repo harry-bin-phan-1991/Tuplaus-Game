@@ -111,8 +111,23 @@ Backend (tuplaus-backend)
 - Runs migrations on container startup.
 
 Database
-- Primary entity: `Player { id, balance, activeWinnings }`.
-- Game rounds can be logged for audit/debug (implementation detail).
+- Primary entity: `Player` – one row per player.
+  - `id: string` (PK): Caller-provided identifier (e.g., user id). Stable across sessions.
+  - `balance: number` (decimal): Spendable account balance. Increases on cash out; decreases on lost bet.
+  - `activeWinnings: number` (decimal): Unbanked winnings carried into the next round if you choose to Double. Set to 0 on loss; moved to `balance` on cash out.
+  - `createdAt: datetime` (optional): Row creation timestamp.
+  - `updatedAt: datetime` (optional): Last mutation timestamp.
+
+- Optional audit table: `GameRoundLog` – immutable record of each played round. Useful for analytics/audit.
+  - `id: string` (PK): Round id.
+  - `playerId: string` (FK → Player.id): Who played the round.
+  - `bet: number` (decimal): Bet amount used for the round (winnings if doubling, else input bet).
+  - `choice: 'small' | 'large'`: Player choice for the round.
+  - `drawnCard: number` (1–13): Server-drawn card.
+  - `didWin: boolean`: Outcome flag.
+  - `winnings: number` (decimal): Winnings produced by this round (0 if loss).
+  - `newBalance: number` (decimal): Player balance after the round is applied server-side.
+  - `createdAt: datetime`: When the round was persisted.
 
 ## 4) Project architecture & embed (Web Component)
 
