@@ -59,8 +59,17 @@ npm run start:dev
 # GraphQL: http://localhost:4000/graphql
 ```
 
+Database connection:
+```
+- DATABASE_URL="postgresql://postgres:password123@localhost:5432/tuplaus_db?schema=public"
+- database name : tuplaus_db
+- database user : postgres
+- password: password123
+- host: localhost
+- port : 5432
+```
+
 Troubleshooting
-- GraphQL 400 in tests: use `getOrCreatePlayer` (not `createPlayer`).
 - Ports busy: free 4000/5173/5432 or change them.
 - Reset Docker stack: `docker compose down -v && docker compose up -d --build`.
 - First Cypress run downloads a binary; let it complete.
@@ -213,7 +222,6 @@ curl -X POST http://localhost:4000/graphql -H 'Content-Type: application/json' \
 ```
 
 Troubleshooting
-- GraphQL 400 in Cypress/e2e: stick to `getOrCreatePlayer`, not `createPlayer`.
 - Reset Docker stack: `docker compose down -v && docker compose up -d --build`.
 - Free ports 4000/5173/5432 if needed.
 ***
