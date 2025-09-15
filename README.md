@@ -23,7 +23,7 @@ What’s where:
 docker-compose.yml   # Postgres + backend (compose)
 ```
 
-## 2) How to run (quick start)
+## 2) How to run (quick start) + also embed testing
 
 Priority: run backend + DB with Docker; run frontend normally.
 
@@ -74,7 +74,7 @@ Troubleshooting
 - Reset Docker stack: `docker compose down -v && docker compose up -d --build`.
 - First Cypress run downloads a binary; let it complete.
 
-### Embed testing (test.html)
+### EMBED TESTING (test.html)
 ```bash
 # Terminal 1 (build and preview the widget)
 cd tuplaus-frontend
@@ -144,10 +144,6 @@ Dockerization
 - `docker-compose.yml` brings up Postgres and the backend; backend runs `prisma migrate deploy` on boot.
 - Frontend runs locally (hot dev) or builds a UMD bundle for embedding.
 
-Embed – why Web Component (vs iframe)
-- Web Components integrate directly with the host DOM for better theming, events, and footprint.
-- No iframe boundary or extra process; simpler messaging and styling.
-- We provide an `allow-origins` attribute to gate usage per origin.
 
 How the Web Component works
 ```html
@@ -160,6 +156,63 @@ How the Web Component works
 </tuplaus-widget>
 ```
 - Attributes are read on mount; the component renders the React app inside a light-DOM container.
+
+### Why I Use a Web Component (Not an iframe)
+
+**Short version:**  
+I went with a Web Component because it fits into the host page naturally. That means I get theming (via CSS variables), smooth sizing, and easier event handling—without the headaches and overhead of iframe embedding.
+
+**Benefits I get with a Web Component:**
+- **Theming and Styling:**  
+  My component can inherit the host’s design tokens, support dark mode on the fly, and respond to CSS variables. There’s no need for style duplication or hacks.  
+- **Lightweight Integration:**  
+  Compared to an iframe, it adds almost no extra memory or complexity. I don’t have to deal with a second document or context, just direct properties and custom events.
+- **Better UX:**  
+  Focus and keyboard navigation work right out of the box. Accessibility is easier with a single tree, so my widget feels like a true part of the host app.
+- **Layout and Responsiveness:**  
+  The Web Component participates in flex or grid containers and resizes with its content. No more manual height syncing or mystery scrollbars.
+- **Simpler Events/Data Flow:**  
+  I pass attributes, emit events, and (when needed) expose functions directly. No postMessage or origin-checking code required.
+
+**When would I use an iframe instead?**
+- If I need strong sandboxing—like isolating JS execution, enforcing security boundaries, or embedding from a different origin.
+- When cross-origin rules or strict isolation are required (e.g., third-party content that I don’t fully trust).
+
+#### My Detailed Rationale
+
+- **Styling and theming**
+  - *Web Component*: Inherits CSS variables and design tokens from the host, so dark mode and custom branding are easy.
+  - *iframe*: Styles are isolated. I’d have to duplicate everything inside the iframe or build complex postMessage updates just for theming.
+
+- **Events and data flow**
+  - *Web Component*: Simple—attributes, props, CustomEvents, or direct function calls.
+  - *iframe*: Relies on postMessage and origin-handling. More moving parts, more chances for bugs or security issues.
+
+- **Layout and responsiveness**
+  - *Web Component*: Sits naturally in flex/grid layouts and grows/shrinks with content—a better fit for modern UIs.
+  - *iframe*: Needs JS “resizer” logic, and scrollbars or overlaying issues can pop up.
+
+- **Accessibility and focus**
+  - *Web Component*: One accessibility tree makes keyboard shortcuts, focus, and screen readers behave predictably.
+  - *iframe*: Each iframe is its own context, so switching focus between host and embed can be jarring for users.
+
+- **Performance and footprint**
+  - *Web Component*: No extra browsing context, fewer layers to render, and minimal memory overhead for the page.
+  - *iframe*: Introduces a full browsing context and heavier process footprint.
+
+- **Security and isolation**
+  - *Web Component*: Runs in the same JS environment; I guard access using allow-origins attribute and backend CORS. Good enough for trusted embeds.
+  - *iframe*: Lets me use the browser’s sandbox and cross-origin policies to isolate untrusted or risky content.
+
+- **Shadow DOM vs. light DOM**
+  - I use the light DOM so theming works smoothly with host CSS variables. But if style encapsulation becomes more important, I can switch to Shadow DOM and add a theming API.
+
+- **Migration and fallback**
+  - If someone needs strict isolation or cross-origin embedding, I can wrap my widget inside an iframe wrapper without changing the internal API.
+
+**Summary:**  
+I use a Web Component because it gives me a flexible, native feel and all the power of regular DOM integration. If I really need isolation and sandboxing, I’ll revisit an iframe. For most cases, though, a Web Component is the right choice.
+
 
 ## 5) Scripts, testing, and references
 
