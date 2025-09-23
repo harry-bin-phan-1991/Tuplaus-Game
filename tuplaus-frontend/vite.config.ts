@@ -6,33 +6,33 @@ import path from 'path';
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  define: {
-    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
+  server: {
+    host: 'localhost',
+    port: 5173,
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'src'),
+      '@': path.resolve(__dirname, './src'),
     },
   },
+  /*
   build: {
     lib: {
-      entry: path.resolve(__dirname, 'src/embed/web-component.tsx'),
+      entry: 'src/embed/web-component.tsx',
       name: 'TuplausWidget',
+      fileName: (format) => `tuplaus-widget.${format}.js`,
       formats: ['umd'],
-      fileName: () => 'tuplaus-widget.umd.js',
     },
     rollupOptions: {
-      // Make sure to externalize deps that shouldn't be bundled
-      // into your library
-      external: [],
       output: {
-        // Provide global variables to use in the UMD build
-        // for externalized deps
         globals: {
+          react: 'React',
+          'react-dom/client': 'ReactDOM',
         },
       },
     },
   },
+  */
   test: {
     globals: true,
     environment: 'jsdom',

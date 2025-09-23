@@ -1,281 +1,274 @@
-***
-
 # Tuplaus Game
 
-A simple, fast “higher-lower” card game:
-- You bet Small (1–6) or Large (8–13). Card 7 always loses.
-- Win: winnings increase; choose to Double (continue) or Cash Out (bank it).
+A full-stack implementation of the Finnish "Tuplaus" (Double Up) card game.
 
-The project has:
-- Backend: NestJS + GraphQL + Prisma (Dockerized).
-- Frontend: React + Vite with a beautiful, animated table and an embeddable Web Component.
+-   **Backend**: NestJS, GraphQL, Prisma, PostgreSQL (running in Docker)
+-   **Frontend**: React, TypeScript, Vite, SCSS (can be run standalone or embedded in an iframe)
 
-## 1) Introduction – how the game and project work
-- The client calls `getOrCreatePlayer(id)` on start, then fetches the player.
-- When you click Small/Large, the client runs `playRound(playRoundInput)` and animates the draw.
-- On win, you can Double (play with winnings) or Cash Out (move winnings to balance).
-- You can run the frontend as a SPA or embed it as `<tuplaus-widget>`.
+The project is architected for clarity, testability, and adherence to best practices, including comprehensive unit and E2E tests for both frontend and backend.
 
-What’s where:
-```
-/tuplaus-backend     # NestJS + GraphQL + Prisma
-/tuplaus-frontend    # React + Vite (SPA + widget build)
-docker-compose.yml   # Postgres + backend (compose)
-```
+***
+
+## 1) Architecture Overview
+
+The project is a monorepo containing two main packages: `tuplaus-backend` and `tuplaus-frontend`.
+
+### Frontend (`tuplaus-frontend`)
+
+A modern React application built with Vite.
+
+-   **UI**: Built with React, TypeScript, and SCSS for styling. The UI is fully responsive and includes fluid animations for all game state transitions.
+-   **State Management**: Zustand is used for lightweight global state management.
+-   **Data Fetching**: TanStack Query handles GraphQL requests, caching, and state synchronization.
+-   **Testing**: Unit tests are written with Vitest and React Testing Library. End-to-end tests use Cypress with network mocking for deterministic results.
+-   **Structure**: Follows a feature-first architecture (`/features`, `/shared`) with path aliases (`@/`) for clean imports.
+-   **Embedding**: The application is designed to be embedded into any host page using an `<iframe>`. Configuration is passed via URL query parameters.
+
+### Backend (`tuplaus-backend`)
+
+A robust GraphQL API built with NestJS.
+
+-   **API**: GraphQL endpoint for all game actions.
+-   **ORM**: Prisma connects to a PostgreSQL database for data persistence.
+-   **Game Logic**: Core game rules, player balance, and win/loss calculations are handled in the `GameService`.
+-   **Security**: Uses Node.js's `crypto` module for cryptographically secure random number generation (CSPRNG) to ensure fair card draws.
+-   **Testing**: Unit tests for services and E2E tests for the GraphQL API are written with Jest.
+
+### Database
+
+-   **Engine**: PostgreSQL, managed via Docker Compose.
+-   **Schema**: A simple `Player` model stores user ID, balance, and active winnings. Migrations are managed by Prisma.
+-   **See "Database Design" section for a detailed schema breakdown.**
+
+***
 
 ## 2) How to run (quick start) + also embed testing
 
 Priority: run backend + DB with Docker; run frontend normally.
 
-Prerequisites
-- Docker Desktop
-- Node 18+ (tested with Node 22)
-- Yarn 1.x (or npm)
-- Ports: 4000 (backend), 5173 (frontend dev), 4173 (frontend preview), 5432 (Postgres)
+### Prerequisites
 
-Quick Start (backend+DB via Docker, frontend dev)
+-   Node.js (v18+ recommended)
+-   Docker Desktop
+-   `yarn` or `npm`
+
+### Step 1: Start Backend & Database (Docker)
+
+This is the recommended way to run the backend services.
+
 ```bash
-# 1) Start backend + DB in Docker (runs migrations automatically)
+# From the project root directory
 docker compose up -d --build
-# Backend: http://localhost:4000/graphql
+```
 
-# 2) Start frontend normally
+-   This command will:
+    1.  Build the backend Docker image.
+    2.  Start a PostgreSQL container.
+    3.  Start the backend container.
+    4.  Run Prisma database migrations automatically on startup.
+-   **Backend GraphQL API will be available at:** `http://localhost:4000/graphql`
+-   **Database will be available at:** `localhost:5432`
+
+### Step 2: Start Frontend
+
+```bash
+# From the project root, open a new terminal
 cd tuplaus-frontend
-yarn
+yarn install
 yarn dev
-# Frontend: http://localhost:5173
-```
-If migrations fail or you need to re-apply:
-```bash
-docker compose exec backend npx prisma migrate deploy
 ```
 
-Alternative: run backend locally (optional)
-```bash
-cd tuplaus-backend
-npm install
-npx prisma migrate deploy
-npm run start:dev
-# GraphQL: http://localhost:4000/graphql
-```
+-   **The frontend development server will be running at:** `http://localhost:5173`
 
-Database connection:
-```
-- DATABASE_URL="postgresql://postgres:password123@localhost:5432/tuplaus_db?schema=public"
-- database name : tuplaus_db
-- database user : postgres
-- password: password123
-- host: localhost
-- port : 5432
-```
+### Step 3: Test the Iframe Embedding
 
-Troubleshooting
-- Ports busy: free 4000/5173/5432 or change them.
-- Reset Docker stack: `docker compose down -v && docker compose up -d --build`.
-- First Cypress run downloads a binary; let it complete.
+To see the game embedded in a host page:
 
-### EMBED TESTING (test.html)
-```bash
-# Terminal 1 (build and preview the widget)
-cd tuplaus-frontend
-yarn build
-yarn preview   # http://localhost:4173
+1.  **Build and Preview the Frontend:**
+    The iframe needs to load the *production build* of the frontend.
 
-# Terminal 2 (serve the demo page from repo root)
-npx serve -l 8080
+    ```bash
+    # In the tuplaus-frontend directory
+    yarn build
+    yarn preview
+    ```
 
-# Open http://localhost:8080/test.html
-# Adjust player-id and api-url to point to your backend
-```
+    This will serve the built frontend app at `http://localhost:4173`.
 
-## 3) Architecture – frontend, backend, database
+2.  **Serve the Host Page:**
+    Open another new terminal.
 
-Frontend (tuplaus-frontend)
-- Features: get-or-create flow, animated dealing/shuffle/draw, bet input, win/lose transitions, cash out, responsive layout.
-- Technologies: React + Vite, Zustand (state), React Query (data), Radix UI, SCSS with design tokens.
-- Animations: CSS-driven states (REVEALING → COVERING → GATHERING → SHUFFLING → SPREADING → READY → DRAWING → RESULT) with timed transitions.
-- Tests: Vitest unit tests; Cypress e2e with deterministic network intercepts.
-- Structure (feature-first):
-```
-src/
-  features/
-    game/
-      api/    # GraphQL queries and types
-      model/  # zustand store
-      ui/     # Game UI components and styles
-  shared/
-    api/      # graphqlRequest helper
-    styles/   # design tokens
-    ui/       # shared UI (Logo, ErrorBoundary)
-```
-- Imports use alias `@` → `src`.
+    ```bash
+    # From the project root directory
+    npx serve -l 8080
+    ```
 
-Backend (tuplaus-backend)
-- Stack: NestJS + GraphQL + Prisma.
-- APIs (purpose):
-  - `getOrCreatePlayer(id: String!): Player!` – idempotent create-or-load.
-  - `playRound(playRoundInput: PlayRoundInput!): GameRound!` – compute outcome, update winnings/balance.
-  - `cashOut(playerId: String!): Player!` – move `activeWinnings` → `balance`.
-  - `player(id: String!): Player` – fetch player snapshot.
-- Runs migrations on container startup.
+3.  **Open in Browser:**
+    -   Navigate to `http://localhost:8080/test.html`.
+    -   You should see the game running inside an iframe.
+    -   Use the controls on the page to reload the iframe with different `playerId` values.
 
-Database
-- Primary entity: `Player` – one row per player.
-  - `id: string` (PK): Caller-provided identifier (e.g., user id). Stable across sessions.
-  - `balance: number` (decimal): Spendable account balance. Increases on cash out; decreases on lost bet.
-  - `activeWinnings: number` (decimal): Unbanked winnings carried into the next round if you choose to Double. Set to 0 on loss; moved to `balance` on cash out.
-  - `createdAt: datetime` (optional): Row creation timestamp.
-  - `updatedAt: datetime` (optional): Last mutation timestamp.
-
-- Optional audit table: `GameRoundLog` – immutable record of each played round. Useful for analytics/audit.
-  - `id: string` (PK): Round id.
-  - `playerId: string` (FK → Player.id): Who played the round.
-  - `bet: number` (decimal): Bet amount used for the round (winnings if doubling, else input bet).
-  - `choice: 'small' | 'large'`: Player choice for the round.
-  - `drawnCard: number` (1–13): Server-drawn card.
-  - `didWin: boolean`: Outcome flag.
-  - `winnings: number` (decimal): Winnings produced by this round (0 if loss).
-  - `newBalance: number` (decimal): Player balance after the round is applied server-side.
-  - `createdAt: datetime`: When the round was persisted.
-
-## 4) Project architecture & embed (Web Component)
-
-Dockerization
-- `docker-compose.yml` brings up Postgres and the backend; backend runs `prisma migrate deploy` on boot.
-- Frontend runs locally (hot dev) or builds a UMD bundle for embedding.
-
-
-How the Web Component works
-```html
-<link rel="stylesheet" href="http://localhost:4173/tuplaus-frontend.css">
-<script src="http://localhost:4173/tuplaus-widget.umd.js"></script>
-<tuplaus-widget
-  player-id="demo-player"
-  api-url="http://localhost:4000/graphql"
-  allow-origins="http://localhost:8080">
-</tuplaus-widget>
-```
-- Attributes are read on mount; the component renders the React app inside a light-DOM container.
-
-### Why I Use a Web Component (Not an iframe)
-
-**Short version:**  
-I went with a Web Component because it fits into the host page naturally. That means I get theming (via CSS variables), smooth sizing, and easier event handling—without the headaches and overhead of iframe embedding.
-
-**Benefits I get with a Web Component:**
-- **Theming and Styling:**  
-  My component can inherit the host’s design tokens, support dark mode on the fly, and respond to CSS variables. There’s no need for style duplication or hacks.  
-- **Lightweight Integration:**  
-  Compared to an iframe, it adds almost no extra memory or complexity. I don’t have to deal with a second document or context, just direct properties and custom events.
-- **Better UX:**  
-  Focus and keyboard navigation work right out of the box. Accessibility is easier with a single tree, so my widget feels like a true part of the host app.
-- **Layout and Responsiveness:**  
-  The Web Component participates in flex or grid containers and resizes with its content. No more manual height syncing or mystery scrollbars.
-- **Simpler Events/Data Flow:**  
-  I pass attributes, emit events, and (when needed) expose functions directly. No postMessage or origin-checking code required.
-
-**When would I use an iframe instead?**
-- If I need strong sandboxing—like isolating JS execution, enforcing security boundaries, or embedding from a different origin.
-- When cross-origin rules or strict isolation are required (e.g., third-party content that I don’t fully trust).
-
-#### My Detailed Rationale
-
-- **Styling and theming**
-  - *Web Component*: Inherits CSS variables and design tokens from the host, so dark mode and custom branding are easy.
-  - *iframe*: Styles are isolated. I’d have to duplicate everything inside the iframe or build complex postMessage updates just for theming.
-
-- **Events and data flow**
-  - *Web Component*: Simple—attributes, props, CustomEvents, or direct function calls.
-  - *iframe*: Relies on postMessage and origin-handling. More moving parts, more chances for bugs or security issues.
-
-- **Layout and responsiveness**
-  - *Web Component*: Sits naturally in flex/grid layouts and grows/shrinks with content—a better fit for modern UIs.
-  - *iframe*: Needs JS “resizer” logic, and scrollbars or overlaying issues can pop up.
-
-- **Accessibility and focus**
-  - *Web Component*: One accessibility tree makes keyboard shortcuts, focus, and screen readers behave predictably.
-  - *iframe*: Each iframe is its own context, so switching focus between host and embed can be jarring for users.
-
-- **Performance and footprint**
-  - *Web Component*: No extra browsing context, fewer layers to render, and minimal memory overhead for the page.
-  - *iframe*: Introduces a full browsing context and heavier process footprint.
-
-- **Security and isolation**
-  - *Web Component*: Runs in the same JS environment; I guard access using allow-origins attribute and backend CORS. Good enough for trusted embeds.
-  - *iframe*: Lets me use the browser’s sandbox and cross-origin policies to isolate untrusted or risky content.
-
-- **Shadow DOM vs. light DOM**
-  - I use the light DOM so theming works smoothly with host CSS variables. But if style encapsulation becomes more important, I can switch to Shadow DOM and add a theming API.
-
-- **Migration and fallback**
-  - If someone needs strict isolation or cross-origin embedding, I can wrap my widget inside an iframe wrapper without changing the internal API.
-
-**Summary:**  
-I use a Web Component because it gives me a flexible, native feel and all the power of regular DOM integration. If I really need isolation and sandboxing, I’ll revisit an iframe. For most cases, though, a Web Component is the right choice.
-
-
-## 5) Scripts, testing, and references
-
-Useful scripts
-```bash
-# Backend
-cd tuplaus-backend
-npm run start:dev                     # start locally
-npx prisma migrate deploy             # apply migrations
-npm run test:e2e                      # backend e2e
-
-# Frontend
-cd tuplaus-frontend
-yarn dev                              # start dev server
-yarn build                            # build widget UMD
-yarn preview                          # preview build (http://localhost:4173)
-yarn lint                             # lint
-yarn test:unit                        # unit tests (Vitest)
-yarn test:e2e                         # Cypress run
-yarn test:e2e:open                    # Cypress GUI
-```
-
-GraphQL endpoint: `http://localhost:4000/graphql`
-
-Schema snippets
-```graphql
-input PlayRoundInput {
-  playerId: String!
-  bet: Float!
-  choice: String! # "small" or "large"
-}
-
-type GameRound {
-  drawnCard: Int!
-  didWin: Boolean!
-  winnings: Float!
-  newBalance: Float!
-}
-
-type Player {
-  id: String!
-  balance: Float!
-  activeWinnings: Float!
-}
-```
-
-curl examples
-```bash
-# get or create player
-curl -X POST http://localhost:4000/graphql -H 'Content-Type: application/json' \
--d '{"query":"mutation($id:String!){getOrCreatePlayer(id:$id){id balance activeWinnings}}","variables":{"id":"test-player"}}'
-
-# play a round
-curl -X POST http://localhost:4000/graphql -H 'Content-Type: application/json' \
--d '{"query":"mutation($i:PlayRoundInput!){playRound(playRoundInput:$i){drawnCard didWin winnings newBalance}}","variables":{"i":{"playerId":"test-player","bet":10,"choice":"small"}}}'
-
-# cash out
-curl -X POST http://localhost:4000/graphql -H 'Content-Type: application/json' \
--d '{"query":"mutation($id:String!){cashOut(playerId:$id){id balance activeWinnings}}","variables":{"id":"test-player"}}'
-```
-
-Troubleshooting
-- Reset Docker stack: `docker compose down -v && docker compose up -d --build`.
-- Free ports 4000/5173/5432 if needed.
 ***
 
+## 3) Project Deep Dive
+
+### Frontend Architecture
+
+-   **Path Alias**: `@/` is configured to point to `tuplaus-frontend/src`.
+-   **Folder Structure**:
+    -   `src/features/game`: Contains all logic, UI, and state related to the core game feature.
+        -   `api/`: GraphQL queries, mutations, and TypeScript types.
+        -   `model/`: Zustand store (`gameStore.ts`).
+        -   `ui/`: React components (`Game`, `GameHeader`, etc.) and SCSS styles.
+    -   `src/shared`: Reusable code across features.
+        -   `api/`: The `graphqlRequest` helper function.
+        -   `styles/`: Global styles and design tokens (`tokens.scss`).
+        -   `ui/`: Common components like `ErrorBoundary` and `Logo`.
+-   **Entry points**:
+    -   `src/main.tsx`: SPA bootstrap. Renders `App` without hardcoded props so it reads configuration from URL.
+    -   `src/App.tsx`: Reads `playerId` and `apiUrl` from `window.location.search` and initializes the game store.
+-   **Animation Flow**: The game's visual flow is managed by a state machine (`gameState`) in the `Game` component. CSS classes are applied based on the current state, triggering transitions and keyframe animations defined in `cards.scss`. The sequence is:
+    `IDLE` → `CLEANUP` → `REVEALING` → `COVERING` → `GATHERING` → `SHUFFLING` → `SPREADING` → `READY` → `DRAWING` → `RESULT`
+
+### Iframe Embedding
+
+The React application is embedded using a standard `<iframe>`.
+
+**How it works:**
+
+1.  The frontend is built as a standard Single-Page Application (SPA).
+2.  The host page (`test.html`) creates an `<iframe>` element.
+3.  The `src` attribute of the iframe points to the URL of the frontend app, with configuration passed as query parameters.
+
+```html
+<iframe
+  src="http://localhost:4173/?playerId=demo-1&apiUrl=http://localhost:4000/graphql"
+>
+</iframe>
+```
+
+-   **Query parameters** (required):
+    -   `playerId`: Unique identifier used by backend to load or create the player.
+    -   `apiUrl`: Full GraphQL endpoint URL (e.g., `http://localhost:4000/graphql`).
+-   **Demo host page**: `test.html` includes UI controls to change `playerId`/`apiUrl` and reload the iframe.
+-   **Ports**: Preview server runs on `4173` (`yarn preview`). Dev server runs on `5173` (`yarn dev`). For iframe testing, use the preview server.
+-   **Security note**: Backends should configure CORS appropriately for the host origin embedding the iframe.
+
+Inside the React app, the `App.tsx` component reads `window.location.search` to get the `playerId` and `apiUrl`, initializing the game store with these values. This makes the component configurable and portable.
+
+### Backend API (GraphQL)
+
+-   **Endpoint**: `http://localhost:4000/graphql`
+-   **Key Operations**:
+    -   `getOrCreatePlayer(id: String!)`: Fetches a player by ID or creates a new one with a default balance if not found. This is an idempotent operation.
+    -   `playRound(playRoundInput: PlayRoundInput!)`: Executes one round of the game.
+    -   `cashOut(playerId: String!)`: Moves `activeWinnings` to the main `balance`.
+    -   `player(id: String!)`: Fetches the current state of a player.
+
+### Database Design
+
+The database schema is defined in `tuplaus-backend/prisma/schema.prisma`.
+
+-   **`Player` Model**: The core entity representing a game player.
+    -   `id` (String, `@id`): A unique identifier for the player, provided by the client.
+    -   `balance` (Decimal): The player's main currency balance.
+    -   `activeWinnings` (Decimal): Winnings from the current streak that have not yet been cashed out. This is the amount that is doubled on a win.
+    -   `createdAt` / `updatedAt`: Automatic timestamps.
+-   **`GameRound` Model**: Logs every round played for auditing and history.
+    -   `id` (String, `@id`): Unique ID for the round.
+    -   `playerId` (String): Foreign key linking to the `Player`.
+    -   `bet` (Decimal): The amount that was bet for the round.
+    -   `choice` (String): The player's guess ("small" or "large").
+    -   `drawnCard` (Int): The card value (1-13) that was drawn.
+    -   `didWin` (Boolean): The outcome of the round.
+    -   `winnings` (Decimal): The amount won in this specific round (0 if lost).
+
+***
+
+## 4) Development & Testing
+
+### Scripts
+
+All commands should be run from the respective package directory (`tuplaus-frontend` or `tuplaus-backend`).
+
+**Backend:**
+
+-   `yarn dev`: Start the NestJS server in watch mode.
+-   `yarn test:unit`: Run unit tests for services.
+-   `yarn test:e2e`: Run end-to-end tests against the GraphQL API (requires database).
+-   `npx prisma migrate dev`: Create a new database migration.
+-   `npx prisma migrate deploy`: Apply pending migrations to the database.
+
+**Frontend:**
+
+-   `yarn dev`: Start the Vite development server.
+-   `yarn build`: Build the application for production.
+-   `yarn preview`: Serve the production build locally.
+-   `yarn test:unit`: Run unit tests with Vitest.
+-   `yarn test:e2e`: Run Cypress E2E tests headlessly.
+-   `yarn test:e2e:open`: Open the Cypress test runner UI.
+
+### Testing Strategy
+
+-   **Backend Unit Tests**: `game.service.spec.ts` tests the core game logic in isolation, mocking Prisma and the `crypto` module to ensure predictable outcomes.
+-   **Backend E2E Tests**: `app.e2e-spec.ts` makes live GraphQL requests to a running instance of the application connected to a test database, verifying the entire request/response flow.
+-   **Frontend Unit Tests**: `Game.test.tsx` tests the main component's logic, mocking the `graphqlRequest` function to simulate API responses and verify that the UI reacts correctly. It uses fake timers to control animations.
+-   **Frontend E2E Tests**: The `cypress/e2e` directory contains tests that run the entire application in a browser. `deterministic.cy.ts` uses `cy.intercept()` to mock GraphQL responses, allowing for testing specific win/loss/cashout scenarios without randomness.
+
+***
+
+## 5) Notes & Troubleshooting
+
+-   **CORS**: The backend enables CORS for all origins by default. This can be configured in `tuplaus-backend/src/main.ts` for production environments.
+-   **Port Conflicts**: Ensure ports `4000`, `5173`, `4173`, `
+
+#### Iframe end-to-end: frontend ↔ backend
+
+- **Load sequence**
+  1. Host page (`test.html`) constructs the iframe `src` with query params: `http://localhost:4173/?playerId=<id>&apiUrl=http://localhost:4000/graphql`.
+  2. Vite preview serves the SPA (`index.html`, JS, CSS). `src/main.tsx` bootstraps React and renders `App`.
+  3. `App.tsx` parses `window.location.search` for `playerId` and `apiUrl` and calls the store `initialize(playerId, apiUrl)`.
+  4. The `Game` screen uses TanStack Query to run `getOrCreatePlayer(id)` first, then queries `player(id)` to render the initial state and starts the entrance animations.
+
+- **Play round (frontend → backend → frontend)**
+  - UI decides `currentBet` (uses `activeWinnings` if present; otherwise the input bet).
+  - Sends GraphQL: `playRound(playRoundInput: { playerId, bet, choice })`.
+  - Backend (`GameService.playRound`):
+    - Uses CSPRNG (`crypto.randomInt(1, 14)`) to draw a fair card.
+    - Computes outcome and updates `Player` in Postgres via Prisma.
+    - Logs a `GameRound` record (optional, useful for audit/analytics).
+    - Returns `{ drawnCard, didWin, winnings, newBalance }`.
+  - Frontend animates travel + flip, updates UI, then refetches `player(id)` to sync `balance` and `activeWinnings`.
+
+- **Cash out**
+  - Sends GraphQL: `cashOut(playerId)`.
+  - Backend moves `activeWinnings → balance` and returns the updated `Player`.
+  - Frontend refetches `player(id)` and resets the game state.
+
+- **Persistence model**
+  - `Player.id` comes from the iframe URL (`playerId`).
+  - `getOrCreatePlayer` is idempotent: returns the existing row or creates a new player with a starting balance.
+
+- **CORS and origins**
+  - During preview: The SPA is served from `http://localhost:4173`. GraphQL lives at `http://localhost:4000`.
+  - CORS on the backend must allow the SPA origin (e.g., `http://localhost:4173`) to permit cross-origin requests from inside the iframe.
+  - The host page origin (`http://localhost:8080`) is not calling the API directly; it only embeds the iframe. So the critical CORS origin is the SPA’s origin, not the host page.
+
+- **Configuration contract**
+  - Required query params: `playerId` and `apiUrl`.
+  - To change configuration dynamically, update the `src` of the iframe (the demo form in `test.html` does this by rebuilding the URL).
+
+- **Error handling**
+  - Network/CORS/GraphQL errors surface through the `ErrorBoundary` and `ErrorBanner` in the SPA.
+  - Common issues:
+    - Backend not running or migrations not applied → GraphQL 5xx/connection errors.
+    - Wrong `apiUrl` or port busy → 4xx/connection refused.
+    - CORS misconfigured (backend must allow `http://localhost:4173`).
+
+- **Security notes**
+  - If you need stronger isolation, you can add iframe `sandbox`/`allow` attributes and restrict backend CORS to exact origins.
+  - The SPA reads only the two query params; it does not execute code from the host page.
+
+- **Performance**
+  - Animations are CSS-accelerated; network traffic is minimal (single GraphQL request per action + small player refetch).
+  - React Query caches `player` briefly; a refetch is forced after mutations to keep the UI authoritative.

@@ -14,7 +14,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
       <Theme>
         <ErrorBoundary>
-          <App playerId="local-dev-player-1" apiUrl="http://localhost:4000/graphql" />
+          <App />
         </ErrorBoundary>
       </Theme>
     </QueryClientProvider>

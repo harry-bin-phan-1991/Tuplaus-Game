@@ -1,22 +1,26 @@
-import { Game } from '@/components/Game';
+import { Game } from '@/features/game/ui/Game';
 import { useGameStore } from '@/features/game/model/gameStore';
 import { useEffect } from 'react';
 
-type AppProps = {
-  playerId: string;
-  apiUrl: string;
+interface AppProps {
+  playerId?: string;
+  apiUrl?: string;
 }
 
-function App({ playerId, apiUrl }: AppProps) {
-  const initialize = useGameStore((state) => state.initialize);
+function App({ playerId: propPlayerId, apiUrl: propApiUrl }: AppProps) {
+  const { initialize } = useGameStore();
 
   useEffect(() => {
-    initialize(playerId, apiUrl);
-  }, [playerId, apiUrl, initialize]);
+    const params = new URLSearchParams(window.location.search);
+    const playerId = propPlayerId || params.get('playerId');
+    const apiUrl = propApiUrl || params.get('apiUrl');
 
-  return (
-    <Game />
-  );
+    if (playerId && apiUrl) {
+      initialize(playerId, apiUrl);
+    }
+  }, [initialize, propPlayerId, propApiUrl]);
+
+  return <Game />;
 }
 
 export default App;

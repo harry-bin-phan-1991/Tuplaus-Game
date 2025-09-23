@@ -1,3 +1,3 @@
-export { Game as default } from '@/components/Game';
+export { Game } from '@/components/Game';
 
 

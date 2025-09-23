@@ -2,748 +2,158 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Tuplaus Widget Demo</title>
+  <title>Tuplaus Game - Iframe Testbed</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="http://localhost:4173/tuplaus-frontend.css">
-  <script src="http://localhost:4173/tuplaus-widget.umd.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-primary: #0f172a;
-      --bg-secondary: #1e293b;
-      --fg-primary: #f8fafc;
-      --fg-secondary: #e2e8f0;
-      --fg-muted: #94a3b8;
-      --fg-subtle: #64748b;
-      --accent-primary: #3b82f6;
-      --accent-secondary: #1d4ed8;
-      --accent-glow: #3b82f680;
-      --success: #10b981;
-      --warning: #f59e0b;
-      --border-primary: #334155;
-      --border-secondary: #475569;
-      --card-bg: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
-      --card-border: linear-gradient(145deg, #475569, #334155);
-      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-      --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-      --shadow-glow: 0 0 50px var(--accent-glow);
+      --bg-dark: #111827;
+      --bg-light: #1f2937;
+      --border-color: #374151;
+      --text-main: #f9fafb;
+      --text-light: #d1d5db;
+      --accent-blue: #3b82f6;
+      --accent-blue-dark: #2563eb;
+      --shadow-color: rgba(0, 0, 0, 0.5);
     }
-
-    * { 
-      box-sizing: border-box; 
-      margin: 0;
-      padding: 0;
-    }
-
+    * { box-sizing: border-box; margin: 0; }
     body {
-      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-      background: radial-gradient(ellipse 80% 50% at 50% -20%, #1e40af15 0%, transparent 60%),
-                  radial-gradient(ellipse 80% 80% at 80% 120%, #7c3aed15 0%, transparent 60%),
-                  linear-gradient(135deg, #0f172a 0%, #020617 100%);
-      color: var(--fg-primary);
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
       min-height: 100vh;
-      line-height: 1.6;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      overflow-x: hidden;
     }
-
-    .container {
+    main {
       width: 100%;
       max-width: 1200px;
-      margin: 0 auto;
-      padding: 1rem;
       display: flex;
       flex-direction: column;
       gap: 2rem;
-      min-height: 100vh;
-      justify-content: center;
     }
-
-    /* Header Styles */
-    .header {
-      text-align: center;
-      padding: 2rem 0;
-    }
-
-    .title {
-      font-size: clamp(2rem, 5vw, 3rem);
-      font-weight: 800;
-      letter-spacing: -0.025em;
-      background: linear-gradient(135deg, var(--fg-primary) 0%, var(--accent-primary) 100%);
-      background-clip: text;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 0.5rem;
-      line-height: 1.2;
-    }
-
-    .subtitle { 
-      color: var(--fg-muted); 
-      font-size: clamp(0.9rem, 2vw, 1.1rem);
-      font-weight: 400;
-      max-width: 600px;
-      margin: 0 auto;
-    }
-
-    /* Card Styles */
-    .card {
-      background: var(--card-bg);
-      border: 1px solid var(--border-primary);
-      border-radius: 20px;
-      box-shadow: var(--shadow-xl);
-      padding: 2rem;
-      position: relative;
-      overflow: hidden;
-      backdrop-filter: blur(10px);
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
-      opacity: 0.5;
-    }
-
-    .card:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-xl), var(--shadow-glow);
-      border-color: var(--accent-primary);
-    }
-
-    /* Configuration Panel */
-    .config-panel h3 { 
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: var(--fg-secondary);
-      margin-bottom: 1.5rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .config-panel h3::before {
-      content: '⚙️';
-      font-size: 1.1rem;
-    }
-
-    .form-row { 
-      display: grid; 
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
-      gap: 1.5rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .form-group {
-      display: flex;
-      flex-direction: column;
-    }
-
-    label { 
-      font-size: 0.875rem; 
-      font-weight: 500;
-      color: var(--fg-muted); 
-      margin-bottom: 0.5rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    input[type="text"] {
+    .header { text-align: center; }
+    h1 { font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem; }
+    p { color: var(--text-light); }
+    .iframe-container {
       width: 100%;
-      background: var(--bg-primary);
-      color: var(--fg-primary);
-      padding: 0.875rem 1rem;
-      border: 2px solid var(--border-primary);
-      border-radius: 12px;
-      font-size: 0.9rem;
-      font-family: inherit;
-      transition: all 0.2s ease;
-      outline: none;
-    }
-
-    input[type="text"]:focus {
-      border-color: var(--accent-primary);
-      box-shadow: 0 0 0 3px var(--accent-glow);
-      transform: translateY(-1px);
-    }
-
-    input[type="text"]:hover {
-      border-color: var(--border-secondary);
-    }
-
-    /* Button Styles */
-    .button-group { 
-      display: flex; 
-      gap: 1rem; 
-      flex-wrap: wrap;
-      justify-content: flex-start;
-    }
-
-    button {
-      background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
-      color: white;
-      font-weight: 600;
-      font-size: 0.875rem;
-      border: none;
-      padding: 0.875rem 1.5rem;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      position: relative;
+      aspect-ratio: 16 / 10;
+      background-color: var(--bg-light);
+      border: 1px solid var(--border-color);
+      border-radius: 1rem;
       overflow: hidden;
-      text-transform: uppercase;
-      letter-spacing: 0.025em;
-      min-width: 100px;
+      box-shadow: 0 10px 20px var(--shadow-color);
     }
-
-    button::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
+    iframe {
       width: 100%;
       height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-      transition: left 0.5s;
+      border: 0;
     }
-
-    button:hover::before {
-      left: 100%;
+    .controls {
+      background-color: var(--bg-light);
+      border: 1px solid var(--border-color);
+      border-radius: 1rem;
+      padding: 2rem;
+      box-shadow: 0 5px 15px var(--shadow-color);
     }
-
-    button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px -8px var(--accent-primary);
+    h2 { font-size: 1.5rem; margin-bottom: 1.5rem; }
+    .form-group {
+      margin-bottom: 1rem;
     }
-
-    button:active {
-      transform: translateY(0);
-    }
-
-    button.secondary {
-      background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--border-primary) 100%);
-      color: var(--fg-secondary);
-    }
-
-    button.secondary:hover {
-      box-shadow: 0 8px 25px -8px var(--border-primary);
-    }
-
-    button:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    /* Widget Container */
-    .widget-container {
-      width: 100%;
-      margin: 0 auto;
-      padding: 2.5rem;
-      background: linear-gradient(145deg, #1a2332 0%, #0f1419 100%);
-      border-radius: 24px;
-      box-shadow: 
-        inset 0 1px 0 rgba(255,255,255,0.05),
-        0 20px 40px -12px rgba(0,0,0,0.4),
-        0 0 80px rgba(59,130,246,0.1);
-      border: 1px solid var(--border-primary);
-      position: relative;
-      overflow: hidden;
-      min-height: 450px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .widget-container::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
-      opacity: 0.1;
-      animation: rotate 20s linear infinite;
-    }
-
-    @keyframes rotate {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-
-    tuplaus-widget {
+    label {
       display: block;
-      width: 100%;
-      position: relative;
-      z-index: 1;
-    }
-
-    /* Status Indicator */
-    .status-indicator {
-      position: fixed;
-      top: 2rem;
-      right: 2rem;
-      padding: 0.5rem 1rem;
-      border-radius: 50px;
-      font-size: 0.75rem;
+      color: var(--text-light);
+      margin-bottom: 0.5rem;
       font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      z-index: 1000;
-      transition: all 0.3s ease;
     }
-
-    .status-indicator.connected {
-      background: var(--success);
+    input[type="text"] {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background-color: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      color: var(--text-main);
+      font-size: 1rem;
+    }
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+    }
+    button {
+      width: 100%;
+      padding: 0.75rem;
+      background-color: var(--accent-blue);
       color: white;
+      border: none;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s;
     }
-
-    .status-indicator.connecting {
-      background: var(--warning);
-      color: white;
-      animation: pulse 2s infinite;
-    }
-
-    .status-indicator.error {
-      background: #ef4444;
-      color: white;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
-
-    /* Footer */
-    .footer { 
-      text-align: center; 
-      color: var(--fg-subtle); 
-      font-size: 0.875rem;
-      padding: 2rem 0;
-      border-top: 1px solid var(--border-primary);
-      margin-top: 2rem;
-    }
-
-    .footer-links {
-      display: flex;
-      justify-content: center;
-      gap: 2rem;
-      margin-top: 1rem;
-      flex-wrap: wrap;
-    }
-
-    .footer-links a {
-      color: var(--fg-muted);
-      text-decoration: none;
-      transition: color 0.2s ease;
-    }
-
-    .footer-links a:hover {
-      color: var(--accent-primary);
-    }
-
-    /* Loading Animation */
-    .loading {
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 2px solid rgba(255,255,255,0.3);
-      border-radius: 50%;
-      border-top-color: white;
-      animation: spin 1s ease-in-out infinite;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    /* Responsive Design */
-    @media (max-width: 768px) {
-      .container {
-        padding: 0.5rem;
-        gap: 1.5rem;
-      }
-      
-      .card {
-        padding: 1.5rem;
-        border-radius: 16px;
-      }
-      
-      .form-row {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-      }
-      
-      .button-group {
-        justify-content: stretch;
-      }
-      
-      button {
-        flex: 1;
-        min-width: auto;
-      }
-      
-      .widget-container {
-        padding: 1.5rem;
-        min-height: 400px;
-        border-radius: 20px;
-      }
-      
-      .status-indicator {
-        position: relative;
-        top: auto;
-        right: auto;
-        margin-bottom: 1rem;
-        display: inline-block;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .header {
-        padding: 1rem 0;
-      }
-      
-      .widget-container {
-        padding: 1rem;
-        min-height: 350px;
-      }
-      
-      input[type="text"] {
-        padding: 0.75rem;
-      }
-      
-      button {
-        padding: 0.75rem 1.25rem;
-      }
-    }
-
-    /* Dark mode enhancements */
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --shadow-glow: 0 0 50px var(--accent-glow);
-      }
-    }
-
-    /* Reduced motion */
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-      }
+    button:hover {
+      background-color: var(--accent-blue-dark);
     }
   </style>
 </head>
 <body>
-  <div class="container">
+  <main>
     <div class="header">
-      <div class="title">Tuplaus Widget Playground</div>
-      <div class="subtitle">Embed the game as a Web Component and configure it with real-time attributes</div>
+      <h1>Tuplaus Game &ndash; Iframe Embed Test</h1>
+      <p>This page demonstrates embedding the Tuplaus game using an <code>&lt;iframe&gt;</code>.</p>
     </div>
 
-    <div class="status-indicator connecting" id="statusIndicator">
-      <span class="loading"></span> Connecting...
+    <div class="iframe-container">
+      <iframe
+        id="tuplaus-iframe"
+        src="http://localhost:4173/?playerId=iframe-user-1&apiUrl=http://localhost:4000/graphql"
+        allow="autoplay"
+      ></iframe>
     </div>
 
-    <div class="card config-panel">
-      <h3>Configuration</h3>
-      <div class="form-row">
+    <div class="controls">
+      <h2>Iframe Controls</h2>
+      <form id="iframe-config-form">
         <div class="form-group">
-          <label for="playerId">Player ID</label>
-          <input id="playerId" type="text" value="player-on-external-site" placeholder="Enter player identifier" />
+          <label for="player-id-input">Player ID</label>
+          <input
+            type="text"
+            id="player-id-input"
+            value="iframe-user-1"
+          />
         </div>
         <div class="form-group">
-          <label for="apiUrl">API URL</label>
-          <input id="apiUrl" type="text" value="http://localhost:4000/graphql" placeholder="GraphQL endpoint URL" />
+          <label for="api-url-input">API URL</label>
+          <input
+            type="text"
+            id="api-url-input"
+            value="http://localhost:4000/graphql"
+          />
         </div>
-      </div>
-      <div class="button-group">
-        <button id="applyBtn">
-          <span class="btn-text">Apply Changes</span>
-        </button>
-        <button class="secondary" id="resetBtn">Reset to Defaults</button>
-      </div>
+        <button type="submit">Reload Iframe</button>
+      </form>
     </div>
-
-    <div class="widget-container">
-      <tuplaus-widget id="tuplausWidget"
-        api-url="http://localhost:4000/graphql"
-        allow-origins="http://localhost:8080">
-      </tuplaus-widget>
-    </div>
-
-    <div class="footer">
-      <div>💡 Tip: Backend should run at the api-url. CORS must be enabled on the server.</div>
-      <div class="footer-links">
-        <a href="#docs">Documentation</a>
-        <a href="#api">API Reference</a>
-        <a href="#github">GitHub</a>
-        <a href="#support">Support</a>
-      </div>
-    </div>
-  </div>
+  </main>
 
   <script>
-    // Configuration constants
-    const CONFIG = {
-      DEFAULT_PLAYER: 'player-on-external-site',
-      DEFAULT_API: 'http://localhost:4000/graphql',
-      DEFAULT_ORIGINS: 'http://localhost:8080'
-    };
+    const form = document.getElementById('iframe-config-form');
+    const iframe = document.getElementById('tuplaus-iframe');
+    const playerIdInput = document.getElementById('player-id-input');
+    const apiUrlInput = document.getElementById('api-url-input');
 
-    // UI State management
-    class UIManager {
-      constructor() {
-        this.elements = {
-          widget: document.getElementById('tuplausWidget'),
-          playerInput: document.getElementById('playerId'),
-          apiInput: document.getElementById('apiUrl'),
-          applyBtn: document.getElementById('applyBtn'),
-          resetBtn: document.getElementById('resetBtn'),
-          statusIndicator: document.getElementById('statusIndicator')
-        };
-        
-        this.isLoading = false;
-        this.setupEventListeners();
-      }
-
-      setupEventListeners() {
-        this.elements.applyBtn.addEventListener('click', () => this.handleApply());
-        this.elements.resetBtn.addEventListener('click', () => this.handleReset());
-        
-        // Auto-apply on Enter key
-        [this.elements.playerInput, this.elements.apiInput].forEach(input => {
-          input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !this.isLoading) {
-              this.handleApply();
-            }
-          });
-        });
-      }
-
-      setLoading(loading, text = 'Processing...') {
-        this.isLoading = loading;
-        const applyBtn = this.elements.applyBtn;
-        const btnText = applyBtn.querySelector('.btn-text');
-        
-        if (loading) {
-          applyBtn.disabled = true;
-          btnText.innerHTML = `<span class="loading"></span> ${text}`;
-        } else {
-          applyBtn.disabled = false;
-          btnText.textContent = 'Apply Changes';
-        }
-      }
-
-      updateStatus(status, message) {
-        const indicator = this.elements.statusIndicator;
-        indicator.className = `status-indicator ${status}`;
-        
-        const messages = {
-          connecting: `<span class="loading"></span> ${message || 'Connecting...'}`,
-          connected: `✅ ${message || 'Connected'}`,
-          error: `❌ ${message || 'Connection failed'}`
-        };
-        
-        indicator.innerHTML = messages[status] || message;
-      }
-
-      showNotification(message, type = 'info') {
-        // Create notification element
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        notification.textContent = message;
-        notification.style.cssText = `
-          position: fixed;
-          top: 20px;
-          left: 50%;
-          transform: translateX(-50%);
-          background: ${type === 'error' ? '#ef4444' : '#10b981'};
-          color: white;
-          padding: 12px 24px;
-          border-radius: 8px;
-          font-weight: 600;
-          z-index: 10000;
-          animation: slideDown 0.3s ease;
-        `;
-        
-        document.body.appendChild(notification);
-        
-        setTimeout(() => {
-          notification.style.animation = 'slideUp 0.3s ease forwards';
-          setTimeout(() => notification.remove(), 300);
-        }, 3000);
-      }
-
-      async handleApply() {
-        if (this.isLoading) return;
-        
-        const playerId = this.elements.playerInput.value.trim() || CONFIG.DEFAULT_PLAYER;
-        const apiUrl = this.elements.apiInput.value.trim() || CONFIG.DEFAULT_API;
-        
-        try {
-          this.setLoading(true, 'Applying changes...');
-          this.updateStatus('connecting', 'Applying configuration...');
-          
-          await gameManager.updateWidget(playerId, apiUrl);
-          
-          this.updateStatus('connected', 'Configuration applied successfully');
-          this.showNotification('Widget configuration updated successfully!');
-        } catch (error) {
-          console.error('Apply failed:', error);
-          this.updateStatus('error', 'Failed to apply configuration');
-          this.showNotification(error.message || 'Failed to apply configuration', 'error');
-        } finally {
-          this.setLoading(false);
-        }
-      }
-
-      async handleReset() {
-        if (this.isLoading) return;
-        
-        try {
-          this.setLoading(true, 'Resetting...');
-          this.updateStatus('connecting', 'Resetting to defaults...');
-          
-          this.elements.playerInput.value = CONFIG.DEFAULT_PLAYER;
-          this.elements.apiInput.value = CONFIG.DEFAULT_API;
-          
-          await gameManager.updateWidget(CONFIG.DEFAULT_PLAYER, CONFIG.DEFAULT_API);
-          
-          this.updateStatus('connected', 'Reset to defaults');
-          this.showNotification('Configuration reset to defaults');
-        } catch (error) {
-          console.error('Reset failed:', error);
-          this.updateStatus('error', 'Failed to reset configuration');
-          this.showNotification('Failed to reset configuration', 'error');
-        } finally {
-          this.setLoading(false);
-        }
-      }
-    }
-
-    // Game management
-    class GameManager {
-      constructor(uiManager) {
-        this.ui = uiManager;
-        this.widget = this.ui.elements.widget;
-      }
-
-      recreateWidget(playerId, apiUrl) {
-        const parent = this.widget.parentNode;
-        const newWidget = document.createElement('tuplaus-widget');
-        
-        // Set attributes
-        newWidget.setAttribute('id', 'tuplausWidget');
-        newWidget.setAttribute('player-id', playerId);
-        newWidget.setAttribute('api-url', apiUrl);
-        newWidget.setAttribute('allow-origins', CONFIG.DEFAULT_ORIGINS);
-        
-        // Replace widget
-        parent.replaceChild(newWidget, this.widget);
-        this.widget = newWidget;
-        this.ui.elements.widget = newWidget;
-        
-        // Add widget event listeners
-        this.setupWidgetEventListeners();
-      }
-
-      setupWidgetEventListeners() {
-        // Listen for custom events from the widget
-        ['gameStart', 'gameEnd', 'win', 'lose', 'error'].forEach(eventType => {
-          this.widget.addEventListener(eventType, (event) => {
-            console.log(`Widget event: ${eventType}`, event.detail);
-            
-            if (eventType === 'error') {
-              this.ui.updateStatus('error', 'Game error occurred');
-            }
-          });
-        });
-      }
-
-      async updateWidget(playerId, apiUrl) {
-        // Validate inputs
-        if (!playerId || !apiUrl) {
-          throw new Error('Player ID and API URL are required');
-        }
-
-        try {
-          new URL(apiUrl); // Validate URL format
-        } catch {
-          throw new Error('Invalid API URL format');
-        }
-
-        // Recreate widget with new configuration
-        this.recreateWidget(playerId, apiUrl);
-        
-        // Wait a bit for widget to initialize
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
-    }
-
-    // Initialize application
-    let uiManager, gameManager;
-
-    document.addEventListener('DOMContentLoaded', async () => {
-      try {
-        // Initialize managers
-        uiManager = new UIManager();
-        gameManager = new GameManager(uiManager);
-        
-        // Initial setup
-        uiManager.updateStatus('connecting', 'Initializing widget...');
-        
-        const initialPlayerId = uiManager.elements.playerInput.value.trim() || CONFIG.DEFAULT_PLAYER;
-        const initialApiUrl = uiManager.elements.apiInput.value.trim() || CONFIG.DEFAULT_API;
-        
-        await gameManager.updateWidget(initialPlayerId, initialApiUrl);
-        
-        uiManager.updateStatus('connected', 'Widget ready');
-        
-        // Add CSS animations
-        const style = document.createElement('style');
-        style.textContent = `
-          @keyframes slideDown {
-            from { transform: translateX(-50%) translateY(-100%); opacity: 0; }
-            to { transform: translateX(-50%) translateY(0); opacity: 1; }
-          }
-          @keyframes slideUp {
-            from { transform: translateX(-50%) translateY(0); opacity: 1; }
-            to { transform: translateX(-50%) translateY(-100%); opacity: 0; }
-          }
-        `;
-        document.head.appendChild(style);
-        
-      } catch (error) {
-        console.error('Initialization failed:', error);
-        uiManager.updateStatus('error', 'Initialization failed');
-        uiManager.showNotification('Failed to initialize widget', 'error');
-      }
-    });
-
-    // Global error handling
-    window.addEventListener('error', (event) => {
-      console.error('Global error:', event.error);
-      if (uiManager) {
-        uiManager.updateStatus('error', 'An error occurred');
-      }
-    });
-
-    window.addEventListener('unhandledrejection', (event) => {
-      console.error('Unhandled promise rejection:', event.reason);
-      if (uiManager) {
-        uiManager.showNotification('An unexpected error occurred', 'error');
-      }
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const playerId = playerIdInput.value;
+      const apiUrl = apiUrlInput.value;
+      const baseUrl = 'http://localhost:4173/';
+      iframe.src = `${baseUrl}?playerId=${encodeURIComponent(
+        playerId
+      )}&apiUrl=${encodeURIComponent(apiUrl)}`;
     });
   </script>
 </body>
